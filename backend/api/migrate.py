@@ -9,10 +9,15 @@ import os
 from pathlib import Path
 import asyncpg
 
-MIGRATIONS = Path(__file__).with_name("migrations")
+SOURCE_MIGRATIONS = Path(__file__).resolve().parents[2] / "database" / "migrations"
+PACKAGED_MIGRATIONS = Path(__file__).with_name("migrations")
+MIGRATIONS = SOURCE_MIGRATIONS if SOURCE_MIGRATIONS.is_dir() else PACKAGED_MIGRATIONS
 
 
 async def migrate() -> None:
+    migration_files = sorted(MIGRATIONS.glob("*.sql"))
+    if not migration_files:
+        raise RuntimeError(f"No migrations found in {MIGRATIONS}")
     database_url = os.environ["DATABASE_URL"].replace("postgresql+asyncpg://", "postgresql://", 1)
     connection = await asyncpg.connect(database_url)
     try:
@@ -23,7 +28,7 @@ async def migrate() -> None:
               applied_at timestamptz NOT NULL DEFAULT now()
             )
         """)
-        for path in sorted(MIGRATIONS.glob("*.sql")):
+        for path in migration_files:
             sql = path.read_text(encoding="utf-8")
             checksum = hashlib.sha256(sql.encode()).hexdigest()
             existing = await connection.fetchval(

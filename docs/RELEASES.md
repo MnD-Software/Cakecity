@@ -3,6 +3,12 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.0.3 — Authoritative migration execution
+
+- Resolves the deployment runner to the repository's real `database/migrations` directory.
+- Fails deployment when no SQL migrations are found instead of accepting an empty schema.
+- Tests the exact ordered migration inventory used by Render and integration CI.
+
 ## 1.0.2 — Portable release automation
 
 - Moves GitHub JavaScript actions to their Node 24-compatible major releases.
