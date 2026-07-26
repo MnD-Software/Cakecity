@@ -21,6 +21,26 @@ jobs:
       - run: pnpm --filter @cakecity/admin exec tsc --noEmit
       - run: pnpm --filter @cakecity/kitchen exec tsc --noEmit
       - run: pnpm build
+      - name: Start production storefront
+        run: |
+          pnpm --filter @cakecity/web exec next start -p 3098 > /tmp/cakecity-web.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:3098/ > /dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/cakecity-web.log
+          exit 1
+      - name: Enforce Lighthouse budgets
+        run: |
+          mkdir -p .lighthouseci/reports
+          pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/ --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=.lighthouseci/reports/home.json --quiet
+          pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/corporate --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=.lighthouseci/reports/corporate.json --quiet
+          node scripts/assert_lighthouse.mjs .lighthouseci/reports/home.json .lighthouseci/reports/corporate.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/reports
   api:
     runs-on: ubuntu-latest
     defaults:
@@ -37,6 +57,65 @@ jobs:
       - run: python -m pytest -q
         env:
           PYTHONPATH: .
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cakecity
+          POSTGRES_USER: cakecity
+          POSTGRES_PASSWORD: local-only
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cakecity"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: backend/api
+    env:
+      DATABASE_URL: postgresql+asyncpg://cakecity:local-only@127.0.0.1:5432/cakecity
+      REDIS_URL: redis://127.0.0.1:6379/0
+      JWT_SECRET: ci-only-secret-with-more-than-thirty-two-characters
+      ALLOWED_HOSTS: '["127.0.0.1","localhost"]'
+      RATE_LIMIT_PER_MINUTE: 1000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/api/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python migrate.py
+      - run: |
+          uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          echo $! > /tmp/cakecity-api.pid
+          for attempt in {1..30}; do
+            curl --fail http://127.0.0.1:8000/ready && break
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:8000/ready
+      - run: python tests/load_smoke.py
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - run: pip install pip-audit
+      - run: pip-audit -r backend/api/requirements.txt
+      - run: pnpm audit --audit-level high
   driver:
     runs-on: ubuntu-latest
     defaults:
@@ -56,7 +135,7 @@ jobs:
       - run: flutter build apk --release --dart-define=API_URL=https://cakecity-api.onrender.com
       - uses: actions/upload-artifact@v4
         with:
-          name: cakecity-driver-v0.9.0
+          name: cakecity-driver-v1.0.0
           path: |
             apps/driver/build/app/outputs/flutter-apk/app-release.apk
             apps/driver/build/web

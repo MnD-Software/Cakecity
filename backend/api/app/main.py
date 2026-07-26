@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from sqlalchemy import text
 
 from .routes.catalog import router as catalog_router
 from .routes.webhooks import router as webhook_router
@@ -18,6 +20,8 @@ from .routes.kitchen import router as kitchen_router
 from .routes.driver import router as driver_router
 from .routes.corporate import router as corporate_router
 from .settings import settings
+from .database import engine
+from .middleware import platform_guard, redis as rate_limit_redis
 
 
 @asynccontextmanager
@@ -29,7 +33,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Cake City Platform API",
-    version="0.9.0",
+    version="1.0.0",
     docs_url="/docs" if settings.environment != "production" else None,
     lifespan=lifespan,
 )
@@ -41,6 +45,8 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "X-Payment-Secret", "X-WC-Webhook-Signature", "X-WC-Webhook-ID",
                    "X-WC-Webhook-Topic", "X-WC-Webhook-Resource", "X-Request-ID"],
 )
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+app.middleware("http")(platform_guard)
 app.include_router(catalog_router)
 app.include_router(webhook_router)
 app.include_router(auth_router)
@@ -61,3 +67,24 @@ app.include_router(corporate_router)
 @app.get("/health", tags=["system"])
 async def health():
     return {"status": "ok", "service": "cakecity-api", "version": app.version}
+
+
+@app.get("/ready", tags=["system"])
+async def ready():
+    checks = {"database": False, "redis": False}
+    try:
+        async with engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
+        checks["database"] = True
+    except Exception:
+        pass
+    try:
+        checks["redis"] = bool(await rate_limit_redis.ping())
+    except Exception:
+        pass
+    status = "ready" if all(checks.values()) else "degraded"
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=200 if status == "ready" else 503,
+        content={"status": status, "service": "cakecity-api", "version": app.version, "checks": checks},
+    )

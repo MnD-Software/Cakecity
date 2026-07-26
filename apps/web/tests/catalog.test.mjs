@@ -70,3 +70,18 @@ test("corporate portal exposes governed purchasing workflows", () => {
     "/v1/corporate/recurring", "Idempotency-Key", "Approve & invoice",
   ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")));
 });
+
+test("launch SEO and security contracts are explicit", () => {
+  const layout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const sitemap = readFileSync(new URL("../app/sitemap.ts", import.meta.url), "utf8");
+  const robots = readFileSync(new URL("../app/robots.ts", import.meta.url), "utf8");
+  const config = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
+  assert.match(layout, /twitter:/);
+  assert.match(home, /application\/ld\+json/);
+  assert.match(home, /"@type": "Bakery"/);
+  assert.match(sitemap, /cakecity\.co\.ke/);
+  assert.match(robots, /sitemap\.xml/);
+  assert.match(config, /Content-Security-Policy/);
+  assert.match(config, /Strict-Transport-Security/);
+});

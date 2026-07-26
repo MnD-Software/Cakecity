@@ -68,6 +68,7 @@ The installed experience launches in its own window and includes an offline fall
   and map the deployment to `kitchen.cakecity.co.ke`.
 - Render: create a Blueprint from the root `render.yaml`, then provide the WooCommerce webhook secret.
 - Both services deploy only after the repository verification checks pass.
+- Follow the production sequence and rollback checklist in `docs/DEPLOYMENT.md`.
 
 ## Run supporting services
 
@@ -75,7 +76,9 @@ The installed experience launches in its own window and includes an offline fall
 docker compose -f docker/docker-compose.yml up
 ```
 
-The API health endpoint is `http://localhost:8000/health`. Copy `.env.example` to `.env` and supply real secrets only in the deployment environment.
+The API liveness endpoint is `http://localhost:8000/health`; dependency readiness is
+`http://localhost:8000/ready`. Copy `.env.example` to `.env` and supply real secrets only in the
+deployment environment.
 
 ## Validate the synchronization boundary
 
@@ -110,6 +113,11 @@ driver operations, secure proof of delivery, live driver position, and customer 
 commerce is now available at `/corporate` with company accounts, governed bulk orders, approvals,
 PO-linked invoice billing, credit controls, statements, account managers, and recurring schedules.
 AI ranking remains a subsequent release.
+
+Release v1.0 adds production readiness checks, Redis throttling, bounded database pools, request
+guards and security headers. Search metadata, structured data, robots and sitemap routes are
+included, the main hero transfer is reduced by more than 95%, and CI now enforces Lighthouse
+budgets, dependency audits, CodeQL, migrations and a concurrent API load smoke test.
 
 ## Configure delivery proof
 

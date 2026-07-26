@@ -38,7 +38,17 @@ class Settings(BaseSettings):
     cloudinary_cloud_name: str = ""
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
-    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    rate_limit_per_minute: int = 120
+    auth_rate_limit_per_minute: int = 15
+    max_request_bytes: int = 2_000_000
+    database_pool_size: int = 10
+    database_max_overflow: int = 20
+    allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
+    allowed_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+    ]
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @field_validator("database_url", mode="before")
@@ -56,10 +66,29 @@ class Settings(BaseSettings):
         return value
 
     def validate_production_secrets(self) -> None:
-        if self.environment == "production" and (
-            len(self.jwt_secret) < 32 or self.jwt_secret.startswith("local-development")
-        ):
-            raise RuntimeError("JWT_SECRET must be a strong production secret")
+        if self.environment != "production":
+            return
+        failures = []
+        if len(self.jwt_secret) < 32 or self.jwt_secret.startswith("local-development"):
+            failures.append("JWT_SECRET must be a strong production secret")
+        if not self.database_url.startswith("postgresql+asyncpg://") or "localhost" in self.database_url:
+            failures.append("DATABASE_URL must be a managed PostgreSQL connection")
+        if not self.redis_url.startswith(("redis://", "rediss://")) or "localhost" in self.redis_url:
+            failures.append("REDIS_URL must be a managed Redis connection")
+        if not self.woocommerce_url.startswith("https://"):
+            failures.append("WOOCOMMERCE_URL must use HTTPS")
+        if not self.woocommerce_consumer_key or not self.woocommerce_consumer_secret:
+            failures.append("WooCommerce API credentials are required")
+        if not self.woocommerce_webhook_secret or self.woocommerce_webhook_secret == "local-development-only":
+            failures.append("WOOCOMMERCE_WEBHOOK_SECRET is required")
+        if not self.secure_cookies:
+            failures.append("SECURE_COOKIES must be enabled")
+        if self.cookie_samesite == "none" and not self.secure_cookies:
+            failures.append("SameSite=None cookies require Secure")
+        if not self.allowed_origins or any(not origin.startswith("https://") for origin in self.allowed_origins):
+            failures.append("ALLOWED_ORIGINS must contain HTTPS origins only")
+        if failures:
+            raise RuntimeError("; ".join(failures))
 
 
 @lru_cache

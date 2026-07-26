@@ -3,6 +3,19 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.0.0 — Launch-hardening baseline
+
+- Redis-backed fixed-window throttling with stricter authentication limits, request-size guards,
+  request IDs and fail-open degraded signalling.
+- Dependency-aware `/ready` checks for PostgreSQL and Redis, separate from the liveness endpoint.
+- Managed-production validation for PostgreSQL, Redis, HTTPS origins, WooCommerce credentials,
+  webhook secrets and secure cookies.
+- Bounded database pools, trusted hosts, CSP, HSTS, origin isolation and private-response controls.
+- Canonical metadata, Open Graph, structured bakery/search data, robots and XML sitemap routes.
+- A 91 KB responsive WebP hero replacing the 1.9 MB primary asset transfer.
+- Enforced Lighthouse budgets, JavaScript and Python dependency audits, CodeQL analysis,
+  migration-backed integration checks and a concurrent API load smoke test.
+
 ## 0.9.0 — Corporate commerce
 
 - Premium company workspace with credit visibility, purchasing controls and account-manager access.

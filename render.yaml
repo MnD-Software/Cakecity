@@ -25,11 +25,21 @@ services:
       - key: COOKIE_SAMESITE
         value: none
       - key: ALLOWED_ORIGINS
-        value: '["https://app.cakecity.co.ke","https://admin.cakecity.co.ke"]'
+        value: '["https://app.cakecity.co.ke","https://admin.cakecity.co.ke","https://kitchen.cakecity.co.ke"]'
+      - key: ALLOWED_HOSTS
+        value: '["cakecity-api.onrender.com","api.cakecity.co.ke"]'
       - key: PUBLIC_API_URL
         value: https://cakecity-api.onrender.com
       - key: STOREFRONT_URL
         value: https://app.cakecity.co.ke
+      - key: DATABASE_POOL_SIZE
+        value: 10
+      - key: DATABASE_MAX_OVERFLOW
+        value: 20
+      - key: RATE_LIMIT_PER_MINUTE
+        value: 120
+      - key: AUTH_RATE_LIMIT_PER_MINUTE
+        value: 15
   - type: worker
     name: cakecity-worker
     runtime: docker
