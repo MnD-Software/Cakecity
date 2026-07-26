@@ -22,3 +22,21 @@ test("PWA has install, offline, update and maskable icon contracts", () => {
   assert.match(manifest, /purpose: "maskable"/);
   assert.match(worker, /caches\.match\("\/offline"\)/);
 });
+
+test("cart survives reload and checkout requests an authoritative quote", () => {
+  const cart = readFileSync(new URL("../lib/use-persistent-cart.ts", import.meta.url), "utf8");
+  const checkout = readFileSync(new URL("../app/checkout/page.tsx", import.meta.url), "utf8");
+  assert.match(cart, /localStorage\.getItem/);
+  assert.match(cart, /localStorage\.setItem/);
+  assert.match(checkout, /\/v1\/checkout\/quote/);
+  assert.match(checkout, /Review availability/);
+});
+
+test("account UI uses register, login, refresh and logout session contracts", () => {
+  const client = readFileSync(new URL("../lib/api.ts", import.meta.url), "utf8");
+  const account = readFileSync(new URL("../app/account/page.tsx", import.meta.url), "utf8");
+  assert.match(client, /\/v1\/auth\/refresh/);
+  assert.match(client, /credentials: "include"/);
+  assert.match(account, /authenticate\(mode/);
+  assert.match(account, /await logout\(\)/);
+});

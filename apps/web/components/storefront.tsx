@@ -1,34 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, X } from "lucide-react";
-import { formatKES, products, type Product } from "@/lib/catalog";
-
-type CartItem = Product & { quantity: number };
+import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
+import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
+import { usePersistentCart } from "@/lib/use-persistent-cart";
 
 export function Storefront() {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cart, add, updateQuantity } = usePersistentCart();
   const [favourites, setFavourites] = useState<string[]>([]);
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
-  const add = (product: Product) => {
-    setCart(current => {
-      const existing = current.find(item => item.id === product.id);
-      return existing
-        ? current.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
-        : [...current, { ...product, quantity: 1 }];
-    });
+  const addConfigured = (product: Product, configuration: { size: CartItem["size"]; message: string }) => {
+    add(product, configuration);
     setActiveProduct(null);
     setCartOpen(true);
   };
-
-  const updateQuantity = (id: string, delta: number) =>
-    setCart(current => current.map(item => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter(item => item.quantity > 0));
 
   return (
     <main>
@@ -46,6 +37,7 @@ export function Storefront() {
         <div className="header-actions">
           <button className="location"><MapPin size={17} /> Nairobi <ChevronRight size={14} /></button>
           <button className="icon-button" onClick={() => setSearchOpen(true)} aria-label="Search"><Search /></button>
+          <a className="icon-button" href="/account" aria-label="Customer account"><UserRound /></a>
           <button className="bag-button" onClick={() => setCartOpen(true)} aria-label={`Shopping bag with ${count} items`}><ShoppingBag /><span>{count}</span></button>
         </div>
       </header>
@@ -108,7 +100,7 @@ export function Storefront() {
       <footer><a className="brand inverse" href="#"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
 
       {searchOpen && <SearchPanel close={() => setSearchOpen(false)} />}
-      {activeProduct && <ProductPanel product={activeProduct} close={() => setActiveProduct(null)} add={() => add(activeProduct)} />}
+      {activeProduct && <ProductPanel product={activeProduct} close={() => setActiveProduct(null)} add={configuration => addConfigured(activeProduct, configuration)} />}
       <CartPanel open={cartOpen} close={() => setCartOpen(false)} cart={cart} subtotal={subtotal} update={updateQuantity} />
     </main>
   );
@@ -120,12 +112,18 @@ function SearchPanel({ close }: { close: () => void }) {
   return <div className="overlay search-overlay" role="dialog" aria-modal="true" aria-label="Search cakes"><button className="close" onClick={close}><X /></button><div className="search-panel"><p className="eyebrow">What can we help you celebrate?</p><label><Search /><input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Try “chocolate cake for a birthday”" /></label><div className="search-results">{query && matches.map(p => <button key={p.id}><span className={`mini-cake ${p.palette}`} /><span><b>{p.name}</b><small>{p.note}</small></span><span>{formatKES(p.price)}</span></button>)}</div></div></div>;
 }
 
-function ProductPanel({ product, close, add }: { product: Product; close: () => void; add: () => void }) {
-  const [size, setSize] = useState("1kg · 8–10");
+function ProductPanel({ product, close, add }: { product: Product; close: () => void; add: (configuration: { size: CartItem["size"]; message: string }) => void }) {
+  const [size, setSize] = useState<CartItem["size"]>("1kg");
   const [message, setMessage] = useState("");
-  return <div className="overlay" role="dialog" aria-modal="true" aria-label={`Personalise ${product.name}`}><div className="drawer product-drawer"><button className="close" onClick={close}><X /></button><div className={`product-hero ${product.palette}`}><span className="cake large"><i /><b /><i /></span></div><div className="drawer-content"><p className="eyebrow">Made yours</p><h2>{product.name}</h2><p>{product.note}. Baked today and hand-finished by our Nairobi kitchen.</p><fieldset><legend>Choose a size</legend>{["1kg · 8–10", "1.5kg · 12–15", "2kg · 18–22"].map(option => <button key={option} className={size === option ? "choice active" : "choice"} onClick={() => setSize(option)}>{option}<span>{option.startsWith("1kg") ? formatKES(product.price) : option.startsWith("1.5") ? `+ ${formatKES(900)}` : `+ ${formatKES(1700)}`}</span></button>)}</fieldset><label className="message-label">Write on the cake <span>{message.length}/32</span><input maxLength={32} value={message} onChange={e => setMessage(e.target.value)} placeholder="e.g. Happy birthday, Amani!" /></label><div className="delivery-note"><MapPin /><span><b>Earliest delivery: Today, 3:30–4:00 PM</b><small>Choose delivery or pickup at checkout</small></span></div><button className="button primary full" onClick={add}>Add to bag · {formatKES(product.price)} <ArrowRight /></button></div></div></div>;
+  const options: { id: CartItem["size"]; label: string; extra: number }[] = [
+    { id: "1kg", label: "1kg · 8–10", extra: 0 },
+    { id: "1.5kg", label: "1.5kg · 12–15", extra: 900 },
+    { id: "2kg", label: "2kg · 18–22", extra: 1700 },
+  ];
+  const extra = options.find(option => option.id === size)?.extra ?? 0;
+  return <div className="overlay" role="dialog" aria-modal="true" aria-label={`Personalise ${product.name}`}><div className="drawer product-drawer"><button className="close" onClick={close}><X /></button><div className={`product-hero ${product.palette}`}><span className="cake large"><i /><b /><i /></span></div><div className="drawer-content"><p className="eyebrow">Made yours</p><h2>{product.name}</h2><p>{product.note}. Baked today and hand-finished by our Nairobi kitchen.</p><fieldset><legend>Choose a size</legend>{options.map(option => <button key={option.id} className={size === option.id ? "choice active" : "choice"} onClick={() => setSize(option.id)}>{option.label}<span>{option.extra ? `+ ${formatKES(option.extra)}` : formatKES(product.price)}</span></button>)}</fieldset><label className="message-label">Write on the cake <span>{message.length}/32</span><input maxLength={32} value={message} onChange={event => setMessage(event.target.value)} placeholder="e.g. Happy birthday, Amani!" /></label><div className="delivery-note"><MapPin /><span><b>Earliest delivery: Today, 3:30–4:00 PM</b><small>Choose delivery or pickup at checkout</small></span></div><button className="button primary full" onClick={() => add({ size, message })}>Add to bag · {formatKES(product.price + extra)} <ArrowRight /></button></div></div></div>;
 }
 
-function CartPanel({ open, close, cart, subtotal, update }: { open: boolean; close: () => void; cart: CartItem[]; subtotal: number; update: (id: string, delta: number) => void }) {
-  return <div className={`overlay cart-overlay ${open ? "open" : ""}`} aria-hidden={!open}><button className="overlay-close" onClick={close} aria-label="Close bag" /><aside className="drawer cart-drawer" aria-label="Shopping bag"><div className="drawer-header"><div><p className="eyebrow">Your bag</p><h2>{cart.length ? "A celebration awaits." : "Your bag is empty."}</h2></div><button className="close" onClick={close}><X /></button></div><div className="cart-items">{cart.map(item => <div className="cart-item" key={item.id}><span className={`mini-cake ${item.palette}`} /><div><b>{item.name}</b><small>1kg · serves 8–10</small><div className="quantity"><button onClick={() => update(item.id, -1)}><Minus /></button><span>{item.quantity}</span><button onClick={() => update(item.id, 1)}><Plus /></button></div></div><strong>{formatKES(item.price * item.quantity)}</strong></div>)}</div>{cart.length > 0 && <div className="cart-footer"><div className="progress"><span style={{ width: `${Math.min(100, subtotal / 50)}%` }} /></div><p>{subtotal >= 5000 ? "You’ve unlocked complimentary delivery." : `${formatKES(5000 - subtotal)} away from complimentary delivery`}</p><div className="total"><span>Subtotal<small>Taxes included</small></span><b>{formatKES(subtotal)}</b></div><button className="button primary full">Choose delivery time <ArrowRight /></button><small className="secure"><Check /> Secure checkout · M-Pesa and cards</small></div>}</aside></div>;
+function CartPanel({ open, close, cart, subtotal, update }: { open: boolean; close: () => void; cart: CartItem[]; subtotal: number; update: (id: string, size: string, delta: number) => void }) {
+  return <div className={`overlay cart-overlay ${open ? "open" : ""}`} aria-hidden={!open}><button className="overlay-close" onClick={close} aria-label="Close bag" /><aside className="drawer cart-drawer" aria-label="Shopping bag"><div className="drawer-header"><div><p className="eyebrow">Your bag</p><h2>{cart.length ? "A celebration awaits." : "Your bag is empty."}</h2></div><button className="close" onClick={close}><X /></button></div><div className="cart-items">{cart.map(item => <div className="cart-item" key={`${item.id}-${item.size}-${item.message}`}><span className={`mini-cake ${item.palette}`} /><div><b>{item.name}</b><small>{item.size} · {item.message || "No cake message"}</small><div className="quantity"><button onClick={() => update(item.id, item.size, -1)}><Minus /></button><span>{item.quantity}</span><button onClick={() => update(item.id, item.size, 1)}><Plus /></button></div></div><strong>{formatKES(item.unitPrice * item.quantity)}</strong></div>)}</div>{cart.length > 0 && <div className="cart-footer"><div className="progress"><span style={{ width: `${Math.min(100, subtotal / 50)}%` }} /></div><p>{subtotal >= 5000 ? "You’ve unlocked complimentary delivery." : `${formatKES(5000 - subtotal)} away from complimentary delivery`}</p><div className="total"><span>Estimated subtotal<small>Confirmed securely at checkout</small></span><b>{formatKES(subtotal)}</b></div><a className="button primary full" href="/checkout">Choose delivery time <ArrowRight /></a><small className="secure"><Check /> Secure checkout · M-Pesa and cards</small></div>}</aside></div>;
 }

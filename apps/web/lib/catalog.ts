@@ -8,6 +8,14 @@ export type Product = {
   palette: string;
 };
 
+export type CartItem = Product & {
+  quantity: number;
+  size: "1kg" | "1.5kg" | "2kg";
+  message?: string;
+  addOns: string[];
+  unitPrice: number;
+};
+
 export const products: Product[] = [
   { id: "red-velvet", name: "The Red Velvet", note: "Velvet crumb · vanilla cream", price: 3200, rating: 4.9, tag: "Bestseller", palette: "ruby" },
   { id: "salted-caramel", name: "Salted Caramel Muse", note: "Caramel sponge · sea salt", price: 3600, rating: 4.8, tag: "New", palette: "caramel" },

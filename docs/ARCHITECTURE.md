@@ -21,6 +21,16 @@ WooCommerce remains the commercial authority for products, prices, coupons, inve
 
 All privileged state transitions are server-side, role checked, and audit logged. Payment and webhook operations require idempotency keys. Secrets stay in managed environment variables.
 
+## Identity and checkout authority
+
+- Passwords are salted and hashed with scrypt; plaintext passwords are never stored or logged.
+- Access tokens are signed, expire after 15 minutes, and carry only customer ID, role and token metadata.
+- Refresh tokens are opaque, stored only as SHA-256 hashes, delivered through HTTP-only cookies, and rotated on every use.
+- A customer can revoke the active refresh session by signing out.
+- The browser cart is an offline continuity layer. Products, stock, prices, configuration surcharges, delivery fees and final totals are recalculated by the API before payment.
+- Saved addresses are owner-scoped by customer ID and never accepted from an access-token claim without reloading the active customer.
+- Database migrations are append-only and checksum protected during Render pre-deploy.
+
 ## Synchronization guarantees
 
 - Webhook signatures are verified with HMAC-SHA256 using constant-time comparison.

@@ -46,6 +46,12 @@ Use the same strong random secret for WooCommerce and `WOOCOMMERCE_WEBHOOK_SECRE
 
 ## Current executable slice
 
-The web app includes premium responsive discovery, occasion navigation, natural-language-style search, favourites, configurable products, cart persistence within the session, free-delivery progress, delivery-time intent, accessibility semantics, metadata, and a PWA manifest. The backend foundation documents and enforces the WooCommerce synchronization boundary.
+The web app includes premium responsive discovery, occasion navigation, search, favourites,
+configurable products, an offline-persistent cart, secure customer accounts, delivery/pickup
+selection, delivery slots and server-confirmed checkout quotes. It is installable as a PWA.
 
-Production integrations, authentication, payments, persistent loyalty, mobile apps, kitchen/driver surfaces, and AI ranking require credentials and subsequent delivery phases; they are deliberately not represented as complete.
+The API includes WooCommerce synchronization, signed webhooks, secure identity, rotating
+refresh sessions, owner-scoped saved addresses, persistent carts and authoritative checkout pricing.
+
+Payment capture, persistent loyalty, mobile apps, kitchen/driver surfaces, and AI ranking remain
+subsequent releases and are deliberately not represented as complete.

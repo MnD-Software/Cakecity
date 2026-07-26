@@ -3,9 +3,10 @@ services:
     name: cakecity-api
     runtime: docker
     dockerfilePath: ./backend/api/Dockerfile
-    dockerContext: ./backend/api
+    dockerContext: .
     healthCheckPath: /health
     autoDeployTrigger: checksPass
+    preDeployCommand: python migrate.py
     envVars:
       - key: ENVIRONMENT
         value: production
@@ -20,6 +21,10 @@ services:
           property: connectionString
       - key: WOOCOMMERCE_WEBHOOK_SECRET
         sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SECURE_COOKIES
+        value: true
   - type: keyvalue
     name: cakecity-redis
     ipAllowList: []
