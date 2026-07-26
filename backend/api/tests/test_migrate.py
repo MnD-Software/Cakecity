@@ -16,4 +16,5 @@ def test_migration_runner_resolves_the_authoritative_schema() -> None:
         "006_admin_growth.sql",
         "007_fulfilment_operations.sql",
         "008_corporate_commerce.sql",
+        "009_product_experience.sql",
     ]

@@ -119,6 +119,11 @@ guards and security headers. Search metadata, structured data, robots and sitema
 included, the main hero transfer is reduced by more than 95%, and CI now enforces Lighthouse
 budgets, dependency audits, CodeQL, migrations and a concurrent API load smoke test.
 
+Release v1.1 adds dedicated premium cake pages at `/cakes/<slug>` with synchronized galleries,
+optional video/360 media, size and inscription choices, priced celebration extras, delivery/pickup
+windows, dietary facts, verified rating summaries, frequently-bought pairings and recently viewed
+continuity. WooCommerce metadata setup is documented in `docs/PRODUCT_EXPERIENCE.md`.
+
 ## Configure delivery proof
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API and

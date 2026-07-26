@@ -85,3 +85,17 @@ test("launch SEO and security contracts are explicit", () => {
   assert.match(config, /Content-Security-Policy/);
   assert.match(config, /Strict-Transport-Security/);
 });
+
+test("premium product journey remains connected to authoritative checkout", () => {
+  const page = readFileSync(new URL("../app/cakes/[slug]/page.tsx", import.meta.url), "utf8");
+  const experience = readFileSync(new URL("../components/product-experience.tsx", import.meta.url), "utf8");
+  const cart = readFileSync(new URL("../lib/use-persistent-cart.ts", import.meta.url), "utf8");
+  assert.match(page, /ProductExperience/);
+  assert.match(page, /application\/ld\+json/);
+  assert.match(experience, /Choose your size/);
+  assert.match(experience, /Make it personal/);
+  assert.match(experience, /Choose how it arrives/);
+  assert.match(experience, /Often chosen together/);
+  assert.match(experience, /Recently viewed/);
+  assert.match(cart, /addOnPrices/);
+});

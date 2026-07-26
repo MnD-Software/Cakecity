@@ -3,6 +3,17 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.1.0 — Premium product and merchandising journey
+
+- Dedicated dynamic cake pages with gallery, zoom, video and optional 360-degree media contracts.
+- Size, inscription, priced celebration extras, quantity, delivery/pickup and time-window selection.
+- WooCommerce-synchronized categories, attributes, ingredients, allergens, nutrition, ratings,
+  preparation time, upsells and cross-sells in the PostgreSQL browse boundary.
+- “Often chosen together” pairing, recommendations, recently viewed continuity and corrected
+  browser add-on totals backed by authoritative checkout recalculation.
+- Dynamic product metadata, Product structured data and product URLs in the XML sitemap.
+- Responsive premium desktop/mobile composition with reduced-motion support and local preview data.
+
 ## 1.0.3 — Authoritative migration execution
 
 - Resolves the deployment runner to the repository's real `database/migrations` directory.

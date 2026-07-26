@@ -6,6 +6,7 @@ export type Product = {
   rating: number;
   tag?: string;
   palette: string;
+  imageUrl?: string;
 };
 
 export type CartItem = Product & {

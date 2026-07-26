@@ -78,6 +78,7 @@ export function Storefront() {
               <div className="product-info">
                 <div><h3>{product.name}</h3><p>{product.note}</p></div><span className="rating"><Star size={13} fill="currentColor" /> {product.rating}</span>
                 <strong>From {formatKES(product.price)}</strong>
+                <a className="product-details-link" href={`/cakes/${product.id}`}>View cake details <ArrowRight /></a>
                 <button className="quick-add" onClick={() => setActiveProduct(product)}>Personalise <Plus /></button>
               </div>
             </article>

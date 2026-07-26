@@ -25,6 +25,20 @@ class Product(Base):
     image_url: Mapped[str | None] = mapped_column(Text)
     source_modified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     synchronized_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    short_description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    gallery: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    categories: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    attributes: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    ingredients: Mapped[str | None] = mapped_column(Text)
+    allergens: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    nutrition: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    preparation_minutes: Mapped[int] = mapped_column(Integer, default=180, nullable=False)
+    average_rating: Mapped[Decimal] = mapped_column(Numeric(3, 2), default=0, nullable=False)
+    review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    upsell_woo_ids: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    cross_sell_woo_ids: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    video_url: Mapped[str | None] = mapped_column(Text)
+    spin_image_urls: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
     __table_args__ = (
         Index("ix_products_browse", "status", "in_stock"),
         Index("ix_products_name", "name"),

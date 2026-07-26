@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import session
 from ..models import Product
-from ..schemas import ProductPage, ProductRead
+from ..schemas import ProductDetail, ProductPage, ProductRead
 
 router = APIRouter(prefix="/v1/catalog", tags=["catalog"])
 
@@ -31,9 +31,20 @@ async def list_products(
     )
 
 
-@router.get("/products/{slug}", response_model=ProductRead)
+@router.get("/products/{slug}", response_model=ProductDetail)
 async def product_detail(slug: str, db: AsyncSession = Depends(session)):
     product = await db.scalar(select(Product).where(Product.slug == slug, Product.status == "publish"))
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    return ProductRead.model_validate(product)
+    priority_ids = [*product.upsell_woo_ids, *product.cross_sell_woo_ids]
+    ranking = [Product.average_rating.desc(), Product.name]
+    if priority_ids:
+        ranking.insert(0, case((Product.woo_id.in_(priority_ids), 0), else_=1))
+    recommendations = list((await db.scalars(
+        select(Product).where(
+            Product.id != product.id, Product.status == "publish", Product.in_stock.is_(True)
+        ).order_by(*ranking).limit(6)
+    )).all())
+    return ProductDetail.model_validate(product).model_copy(update={
+        "recommendations": [ProductRead.model_validate(item) for item in recommendations]
+    })

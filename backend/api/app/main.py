@@ -33,7 +33,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Cake City Platform API",
-    version="1.0.3",
+    version="1.1.0",
     docs_url="/docs" if settings.environment != "production" else None,
     lifespan=lifespan,
 )

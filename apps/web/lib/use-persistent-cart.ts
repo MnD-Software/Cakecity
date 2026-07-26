@@ -5,6 +5,9 @@ import type { CartItem, Product } from "./catalog";
 
 const STORAGE_KEY = "cakecity-cart-v1";
 const surcharges = { "1kg": 0, "1.5kg": 900, "2kg": 1700 } as const;
+const addOnPrices: Record<string, number> = {
+  candles: 250, "greeting-card": 350, "gift-wrap": 300, flowers: 1800,
+};
 
 export function usePersistentCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -33,7 +36,8 @@ export function usePersistentCart() {
     const size = configuration?.size ?? "1kg";
     const message = configuration?.message?.trim() ?? "";
     const addOns = configuration?.addOns ?? [];
-    const unitPrice = product.price + surcharges[size];
+    const unitPrice = product.price + surcharges[size] +
+      [...new Set(addOns)].reduce((total, item) => total + (addOnPrices[item] ?? 0), 0);
     setCart(current => {
       const existing = current.find(item =>
         item.id === product.id && item.size === size && item.message === message &&
