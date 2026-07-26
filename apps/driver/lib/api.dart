@@ -4,7 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class CakeCityApi {
-  CakeCityApi({String? baseUrl}) : baseUrl = baseUrl ?? const String.fromEnvironment('API_URL', defaultValue: 'http://127.0.0.1:8000');
+  CakeCityApi({String? baseUrl}) : baseUrl = baseUrl ?? const String.fromEnvironment('API_URL', defaultValue: 'https://cakecity-api.onrender.com');
   final String baseUrl;
   final _storage = const FlutterSecureStorage();
   String? _access;

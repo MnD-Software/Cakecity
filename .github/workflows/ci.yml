@@ -52,11 +52,11 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
-      - run: flutter build web --release --dart-define=API_URL=${{ vars.RENDER_API_URL }}
-      - run: flutter build apk --release --dart-define=API_URL=${{ vars.RENDER_API_URL }}
+      - run: flutter build web --release --dart-define=API_URL=https://cakecity-api.onrender.com
+      - run: flutter build apk --release --dart-define=API_URL=https://cakecity-api.onrender.com
       - uses: actions/upload-artifact@v4
         with:
-          name: cakecity-driver-v0.8.2
+          name: cakecity-driver-v0.8.3
           path: |
             apps/driver/build/app/outputs/flutter-apk/app-release.apk
             apps/driver/build/web
