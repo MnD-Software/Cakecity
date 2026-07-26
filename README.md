@@ -11,6 +11,24 @@ corepack pnpm run dev
 
 Open `http://localhost:3000`.
 
+## Run Cake City Command
+
+```powershell
+corepack pnpm --filter @cakecity/admin dev
+```
+
+Open `http://localhost:3001`. Staff authentication uses the same secure identity service, but
+every `/v1/admin` operation enforces the `admin`, `manager`, `marketing`, or `support` role.
+Create the first administrator from a secure Render shell or local deployment environment:
+
+```powershell
+$env:ADMIN_EMAIL = "operations@cakecity.co.ke"
+$env:ADMIN_PASSWORD = "<strong one-time secret>"
+python -m app.bootstrap_admin
+```
+
+Run that command from `backend/api`. Remove the one-time password environment value afterward.
+
 ## Install the PWA representation
 
 Open the website in Chrome or Edge on localhost or HTTPS. Use the **Install app**
@@ -20,6 +38,8 @@ The installed experience launches in its own window and includes an offline fall
 ## Deployment
 
 - Vercel: import this repository and use the root `vercel.json`.
+- Admin Vercel project: set Root Directory to `apps/admin`, use its `vercel.json`, configure
+  `NEXT_PUBLIC_API_URL`, and map the deployment to `admin.cakecity.co.ke`.
 - Render: create a Blueprint from the root `render.yaml`, then provide the WooCommerce webhook secret.
 - Both services deploy only after the repository verification checks pass.
 
@@ -59,7 +79,7 @@ Delivered orders now settle immutable reward points, membership progress and qua
 Customers can convert points to spendable Cake City wallet credit, pay fully from that credit at
 checkout, and save recurring family moments for automated birthday and anniversary reminders.
 
-Live production credentials, native mobile apps, kitchen/driver surfaces, marketing administration, and AI ranking remain
+Live production credentials, native mobile apps, kitchen/driver surfaces, corporate workflows, and AI ranking remain
 subsequent releases and are deliberately not represented as complete.
 
 ## Configure customer notifications

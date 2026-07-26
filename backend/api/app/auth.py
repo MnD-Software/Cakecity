@@ -97,6 +97,14 @@ async def current_customer(
     return customer
 
 
+def require_roles(*allowed_roles: str):
+    async def dependency(customer: Customer = Depends(current_customer)) -> Customer:
+        if customer.role not in allowed_roles:
+            raise HTTPException(status_code=403, detail="You do not have permission to access this resource")
+        return customer
+    return dependency
+
+
 async def optional_customer(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     db: AsyncSession = Depends(session),

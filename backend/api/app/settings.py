@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     access_token_minutes: int = 15
     refresh_token_days: int = 30
     secure_cookies: bool = False
+    cookie_samesite: str = "lax"
     cookie_domain: str | None = None
     public_api_url: str = "http://127.0.0.1:8000"
     storefront_url: str = "http://localhost:3000"
@@ -34,7 +35,7 @@ class Settings(BaseSettings):
     vapid_public_key: str = ""
     vapid_private_key: str = ""
     vapid_subject: str = "mailto:hello@cakecity.co.ke"
-    allowed_origins: list[str] = ["http://localhost:3000"]
+    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @field_validator("database_url", mode="before")
@@ -42,6 +43,14 @@ class Settings(BaseSettings):
     def async_postgres_driver(cls, value: str) -> str:
         # Managed providers expose postgresql://; SQLAlchemy async requires the driver.
         return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    @field_validator("cookie_samesite")
+    @classmethod
+    def valid_cookie_samesite(cls, value: str) -> str:
+        value = value.lower()
+        if value not in {"lax", "strict", "none"}:
+            raise ValueError("COOKIE_SAMESITE must be lax, strict or none")
+        return value
 
     def validate_production_secrets(self) -> None:
         if self.environment == "production" and (

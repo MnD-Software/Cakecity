@@ -13,6 +13,7 @@ from .routes.orders import router as orders_router
 from .routes.notifications import router as notifications_router
 from .routes.rewards import router as rewards_router
 from .routes.moments import router as moments_router
+from .routes.admin import router as admin_router
 from .settings import settings
 
 
@@ -25,7 +26,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Cake City Platform API",
-    version="0.6.0",
+    version="0.7.0",
     docs_url="/docs" if settings.environment != "production" else None,
     lifespan=lifespan,
 )
@@ -33,9 +34,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "X-Payment-Secret", "X-WC-Webhook-Signature", "X-WC-Webhook-ID",
-                   "X-WC-Webhook-Topic", "X-WC-Webhook-Resource"],
+                   "X-WC-Webhook-Topic", "X-WC-Webhook-Resource", "X-Request-ID"],
 )
 app.include_router(catalog_router)
 app.include_router(webhook_router)
@@ -48,6 +49,7 @@ app.include_router(orders_router)
 app.include_router(notifications_router)
 app.include_router(rewards_router)
 app.include_router(moments_router)
+app.include_router(admin_router)
 
 
 @app.get("/health", tags=["system"])

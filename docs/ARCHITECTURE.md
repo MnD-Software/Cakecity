@@ -5,7 +5,7 @@ WooCommerce remains the commercial authority for products, prices, coupons, inve
 ## Bounded applications
 
 - `apps/web`: premium customer storefront and PWA
-- `apps/admin`: merchandising, CRM, loyalty, marketing, and analytics (planned)
+- `apps/admin`: role-secured Cake City Command for CRM, campaigns, customers, analytics, and audit
 - `apps/kitchen`: production queue and quality workflow (planned)
 - `apps/mobile`: Flutter customer app (planned)
 - `apps/driver`: Flutter delivery app (planned)
@@ -19,7 +19,16 @@ WooCommerce remains the commercial authority for products, prices, coupons, inve
 3. Kitchen and driver operations with status events and live tracking.
 4. AI search, recommendation ranking, prediction, and support assistants after sufficient consented behavioral data exists.
 
-Privileged customer state transitions are server-side and owner-scoped. Payment, redemption and webhook operations are idempotent. Secrets stay in managed environment variables. A dedicated cross-application audit trail is scheduled with the admin release.
+Privileged customer state transitions are server-side and owner-scoped. Payment, redemption and webhook operations are idempotent. Secrets stay in managed environment variables. Staff mutations are role checked and recorded in an append-only audit trail with actor, target, request origin and change metadata.
+
+## Staff operations and growth automation
+
+- Staff accounts reuse signed short-lived access tokens and rotating refresh sessions, while each admin operation reloads the active database role.
+- Browser cookie requests validate the `Origin` header against explicit storefront and admin origins. Production cross-site cookies are secure, HTTP-only and `SameSite=None`.
+- CRM leads, activities and tasks are platform-owned workflow records. Every lead, stage, activity, task and campaign mutation emits an audit event in the same database transaction.
+- Campaigns are authored for explicit customer segments, scheduled by authorised growth staff and expanded by the background worker. Unique campaign/customer deliveries prevent duplicate dispatch after restarts.
+- Revenue, AOV, repeat purchase, product, loyalty, referral, campaign and pipeline analytics are calculated from authoritative platform records rather than client telemetry.
+- WooCommerce order state remains read-only to this admin release; production and driver state transitions belong to their dedicated operational applications.
 
 ## Identity and checkout authority
 

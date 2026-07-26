@@ -1,0 +1,5 @@
+.retention-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:9px}
+.retention-strip>div{background:var(--paper);border:1px solid var(--line);padding:17px;display:flex;flex-direction:column}
+.retention-strip small{color:var(--muted);font-size:8px}
+.retention-strip b{font:600 24px var(--serif);margin-top:4px}
+@media(max-width:760px){.retention-strip{grid-template-columns:1fr 1fr}}

@@ -60,9 +60,15 @@ def customer_read(customer: Customer) -> CustomerRead:
 def set_refresh_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         COOKIE, token, max_age=settings.refresh_token_days * 86400,
-        httponly=True, secure=settings.secure_cookies, samesite="lax",
+        httponly=True, secure=settings.secure_cookies, samesite=settings.cookie_samesite,
         domain=settings.cookie_domain, path="/v1/auth",
     )
+
+
+def require_trusted_origin(request: Request) -> None:
+    origin = request.headers.get("origin")
+    if origin and origin not in settings.allowed_origins:
+        raise HTTPException(status_code=403, detail="Untrusted request origin")
 
 
 async def issue_session(customer: Customer, request: Request, response: Response, db: AsyncSession, family_id: UUID | None = None) -> AuthResponse:
@@ -82,6 +88,7 @@ async def issue_session(customer: Customer, request: Request, response: Response
 
 @router.post("/register", response_model=AuthResponse, status_code=201)
 async def register(payload: RegisterRequest, request: Request, response: Response, db: AsyncSession = Depends(session)):
+    require_trusted_origin(request)
     if await db.scalar(select(Customer.id).where(Customer.email == payload.email)):
         raise HTTPException(status_code=409, detail="An account with this email already exists")
     customer = Customer(
@@ -95,6 +102,7 @@ async def register(payload: RegisterRequest, request: Request, response: Respons
 
 @router.post("/login", response_model=AuthResponse)
 async def login(payload: LoginRequest, request: Request, response: Response, db: AsyncSession = Depends(session)):
+    require_trusted_origin(request)
     customer = await db.scalar(select(Customer).where(Customer.email == payload.email.strip().lower()))
     if not customer or not customer.is_active or not verify_password(payload.password, customer.password_hash):
         raise HTTPException(status_code=401, detail="Email or password is incorrect")
@@ -103,6 +111,7 @@ async def login(payload: LoginRequest, request: Request, response: Response, db:
 
 @router.post("/refresh", response_model=AuthResponse)
 async def refresh(request: Request, response: Response, db: AsyncSession = Depends(session)):
+    require_trusted_origin(request)
     raw = request.cookies.get(COOKIE)
     if not raw:
         raise HTTPException(status_code=401, detail="Refresh session missing")
@@ -129,6 +138,7 @@ async def refresh(request: Request, response: Response, db: AsyncSession = Depen
 
 @router.post("/logout", status_code=204)
 async def logout(request: Request, response: Response, db: AsyncSession = Depends(session)):
+    require_trusted_origin(request)
     raw = request.cookies.get(COOKIE)
     if raw:
         await db.execute(update(RefreshSession).where(

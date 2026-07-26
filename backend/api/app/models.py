@@ -332,6 +332,104 @@ class ReminderDelivery(Base):
     __table_args__ = (UniqueConstraint("moment_id", "event_year", "days_before", name="uq_reminder_delivery"),)
 
 
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    actor_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"))
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(60), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    changes: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    ip_address: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(500))
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        Index("ix_audit_created", "created_at"),
+        Index("ix_audit_target", "target_type", "target_id"),
+        Index("ix_audit_actor", "actor_id", "created_at"),
+    )
+
+
+class CRMLead(Base):
+    __tablename__ = "crm_leads"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"))
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    email: Mapped[str] = mapped_column(String(320), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(32))
+    source: Mapped[str] = mapped_column(String(60), default="manual", nullable=False)
+    stage: Mapped[str] = mapped_column(String(32), default="new", nullable=False)
+    estimated_value: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    owner_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"))
+    next_action_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (
+        Index("ix_crm_leads_pipeline", "stage", "next_action_at"),
+        Index("ix_crm_leads_owner", "owner_id", "stage"),
+    )
+
+
+class CRMActivity(Base):
+    __tablename__ = "crm_activities"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    lead_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("crm_leads.id", ondelete="CASCADE"), nullable=False)
+    actor_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    activity_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    summary: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_crm_activity_lead", "lead_id", "created_at"),)
+
+
+class CRMTask(Base):
+    __tablename__ = "crm_tasks"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    lead_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("crm_leads.id", ondelete="CASCADE"), nullable=False)
+    assignee_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(240), nullable=False)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="open", nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_crm_tasks_assignee", "assignee_id", "state", "due_at"),)
+
+
+class MarketingCampaign(Base):
+    __tablename__ = "marketing_campaigns"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(180), nullable=False)
+    channel: Mapped[str] = mapped_column(String(24), nullable=False)
+    audience_segment: Mapped[str] = mapped_column(String(40), nullable=False)
+    subject: Mapped[str] = mapped_column(String(180), nullable=False)
+    message: Mapped[str] = mapped_column(String(1000), nullable=False)
+    call_to_action_url: Mapped[str] = mapped_column(String(500), default="/", nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="draft", nullable=False)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    launched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_campaign_schedule", "state", "scheduled_at"),)
+
+
+class CampaignDelivery(Base):
+    __tablename__ = "campaign_deliveries"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    campaign_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("marketing_campaigns.id", ondelete="CASCADE"), nullable=False)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    notification_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("notifications.id", ondelete="SET NULL"))
+    state: Mapped[str] = mapped_column(String(24), default="queued", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        UniqueConstraint("campaign_id", "customer_id", name="uq_campaign_customer"),
+        Index("ix_campaign_delivery_state", "campaign_id", "state"),
+    )
+
+
 class PaymentIntent(Base):
     __tablename__ = "payment_intents"
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)

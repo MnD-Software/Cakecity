@@ -54,9 +54,21 @@ strict TypeScript, a production Next.js build, API tests, and deployment configu
 - Annual birthday points for the account holder’s single self moment
 - Premium Rewards and My Moments PWA account experiences
 
+## 0.7.0 — Cake City Command, CRM and growth operations
+
+- Separate premium Next.js admin application with responsive command-centre UX
+- Database-enforced staff roles for admin, manager, marketing and support
+- Trusted-origin checks for cross-site refresh-cookie operations
+- CRM opportunity pipeline, activities, follow-up tasks and stage workflows
+- Segment-aware in-app, email and Web Push campaign scheduling
+- Idempotent worker expansion and per-customer campaign delivery records
+- Customer segments for new, repeat, VIP, lapsed and upcoming birthdays
+- Revenue, AOV, repeat purchase, product, loyalty, referral and campaign analytics
+- Append-only staff audit trail with actor, request and target evidence
+- Secure one-time administrator bootstrap command and separate Vercel configuration
+
 ## Next releases
 
-- 0.7: admin, CRM, marketing automation and analytics
 - 0.8: kitchen production and driver operations
 - 0.9: corporate ordering and approval workflows
 - 1.0: hardened public launch, load/security/accessibility evidence

@@ -57,9 +57,14 @@ async def dispatch_notification(db, notification: Notification) -> None:
     prefs = await db.get(NotificationPreference, notification.customer_id)
     email_enabled = prefs.email if prefs else True
     push_enabled = prefs.push if prefs else False
-    if email_enabled:
+    channel = notification.data.get("channel")
+    if channel == "email" and email_enabled and (not settings.brevo_api_key or not settings.brevo_sender_email):
+        raise RuntimeError("Brevo is not configured for email campaigns")
+    if channel == "push" and push_enabled and not settings.vapid_private_key:
+        raise RuntimeError("VAPID is not configured for push campaigns")
+    if email_enabled and channel in (None, "email"):
         await send_email(customer, notification)
-    if push_enabled:
+    if push_enabled and channel in (None, "push"):
         subscriptions = (await db.scalars(select(PushSubscription).where(
             PushSubscription.customer_id == notification.customer_id,
             PushSubscription.revoked_at.is_(None),

@@ -22,6 +22,10 @@ services:
       - fromGroup: cakecity-secrets
       - key: SECURE_COOKIES
         value: true
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: ALLOWED_ORIGINS
+        value: '["https://app.cakecity.co.ke","https://admin.cakecity.co.ke"]'
       - key: PUBLIC_API_URL
         value: https://cakecity-api.onrender.com
       - key: STOREFRONT_URL

@@ -11,6 +11,7 @@ from .services.synchronizer import upsert_product
 from .services.notifications import dispatch_notification
 from .services.loyalty import settle_order_rewards
 from .services.reminders import process_due_reminders
+from .services.campaigns import claim_due_campaign, complete_campaign_delivery, launch_campaign
 from zoneinfo import ZoneInfo
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
@@ -201,6 +202,7 @@ async def process(event: OutboxEvent) -> None:
                 notification = await db.get(Notification, UUID(attached.payload["notification_id"]))
                 if notification:
                     await dispatch_notification(db, notification)
+                    await complete_campaign_delivery(db, notification)
             attached.state = "processed"
             attached.processed_at = datetime.now(timezone.utc)
             attached.last_error = None
@@ -223,10 +225,14 @@ async def run() -> None:
         async with SessionFactory() as db:
             event = await claim_event(db)
             webhook = None if event else await claim_webhook(db)
+            campaign = None if event or webhook else await claim_due_campaign(db)
         if event:
             await process(event)
         elif webhook:
             await process_woo_webhook(webhook)
+        elif campaign:
+            async with SessionFactory() as db:
+                await launch_campaign(db, campaign.id)
         else:
             await asyncio.sleep(2)
 
