@@ -2,13 +2,13 @@
 
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from "react";
 import {
-  Activity, ArrowRight, BarChart3, BellRing, CheckCircle2, ChevronDown, CircleDollarSign,
+  Activity, ArrowRight, BarChart3, BellRing, Building2, CheckCircle2, ChevronDown, CircleDollarSign,
   ContactRound, Crown, Gauge, LogOut, Megaphone, Menu, Plus, Search, ShieldCheck,
   Sparkles, UsersRound, X,
 } from "lucide-react";
 import { adminApi, staffLogin, staffLogout, type Staff } from "@/lib/api";
 
-type View = "overview" | "customers" | "crm" | "campaigns" | "analytics" | "audit";
+type View = "overview" | "customers" | "corporate" | "crm" | "campaigns" | "analytics" | "audit";
 type Overview = {
   revenue_30d: string; revenue_change_percent: string; orders_30d: number;
   average_order_value: string; customers: number; repeat_purchase_rate: number;
@@ -21,10 +21,12 @@ type AuditItem = { id: string; action: string; target_type: string; target_id: s
 type RevenuePoint = { date: string; revenue: string; orders: number };
 type ProductPoint = { name: string; units: number; revenue: string };
 type Retention = { tiers: Record<string, number>; points_issued: number; points_redeemed: number; referrals_total: number; referrals_completed: number; referral_conversion_rate: number; completed_campaigns: number; campaign_dispatches: number };
+type CorporateAccount = { id: string; name: string; billing_email: string; credit_limit: string; outstanding: string; payment_terms_days: number; state: string; members: number };
 
 const nav: { id: View; label: string; icon: ReactNode }[] = [
   { id: "overview", label: "Command centre", icon: <Gauge /> },
   { id: "customers", label: "Customers", icon: <UsersRound /> },
+  { id: "corporate", label: "Corporate", icon: <Building2 /> },
   { id: "crm", label: "CRM pipeline", icon: <ContactRound /> },
   { id: "campaigns", label: "Campaigns", icon: <Megaphone /> },
   { id: "analytics", label: "Analytics", icon: <BarChart3 /> },
@@ -67,6 +69,7 @@ export default function AdminPage() {
       <header className="admin-topbar"><button className="menu-button" onClick={() => setMenu(true)}><Menu /></button><div><small>{new Date().toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}</small><b>Good to see you, {staff.first_name}.</b></div><button className="admin-alert"><BellRing /><i /></button></header>
       {view === "overview" && <OverviewView setView={setView} />}
       {view === "customers" && <CustomersView />}
+      {view === "corporate" && <CorporateView setStatus={setStatus} canManage={["admin", "manager"].includes(staff.role)} />}
       {view === "crm" && <CRMView status={status} setStatus={setStatus} />}
       {view === "campaigns" && <CampaignsView status={status} setStatus={setStatus} />}
       {view === "analytics" && <AnalyticsView />}
@@ -119,6 +122,36 @@ function CustomersView() {
   return <section className="admin-page"><PageHeader eyebrow="Customer intelligence" title="Know every relationship" />
     <div className="table-tools"><div className="segment-tabs">{["all", "new", "repeat", "vip", "lapsed", "birthday_upcoming"].map(item => <button className={segment === item ? "active" : ""} key={item} onClick={() => setSegment(item)}>{label(item)}</button>)}</div><label className="admin-search"><Search /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search customer" /></label></div>
     <div className="data-table"><div className="table-row head"><span>Customer</span><span>Membership</span><span>Lifetime value</span><span>Joined</span></div>{items.map(item => <div className="table-row" key={item.id}><span><b>{item.name}</b><small>{item.email}</small></span><span><i className={`tier ${item.tier}`} />{label(item.tier)}</span><strong>{money(item.lifetime_spend)}</strong><span>{new Date(item.created_at).toLocaleDateString("en-KE")}</span></div>)}{items.length === 0 && <div className="empty-data">No customers match this segment.</div>}</div>
+  </section>;
+}
+
+function CorporateView({ setStatus, canManage }: { setStatus: (value: string) => void; canManage: boolean }) {
+  const [items, setItems] = useState<CorporateAccount[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [memberAccount, setMemberAccount] = useState<CorporateAccount | null>(null);
+  const load = () => adminApi<CorporateAccount[]>("/v1/corporate/admin/accounts").then(setItems);
+  useEffect(() => { load(); }, []);
+  async function create(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    await adminApi("/v1/corporate/admin/accounts", { method: "POST", body: JSON.stringify({
+      name: form.get("name"), billing_email: form.get("billing_email"), phone: form.get("phone") || null,
+      tax_pin: form.get("tax_pin") || null, credit_limit: Number(form.get("credit_limit")),
+      approval_threshold: Number(form.get("approval_threshold") || 0),
+      payment_terms_days: Number(form.get("payment_terms_days")), billing_address: {},
+    }) }); await load(); setCreating(false); setStatus("Corporate account created and audited.");
+  }
+  async function addMember(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!memberAccount) return; const form = new FormData(event.currentTarget);
+    await adminApi(`/v1/corporate/admin/accounts/${memberAccount.id}/members`, { method: "POST", body: JSON.stringify({
+      email: form.get("email"), role: form.get("role"),
+      spend_limit: form.get("spend_limit") ? Number(form.get("spend_limit")) : null,
+      cost_center: form.get("cost_center") || null,
+    }) }); await load(); setMemberAccount(null); setStatus("Corporate member access granted and audited.");
+  }
+  return <section className="admin-page"><PageHeader eyebrow="Business accounts" title="Corporate partnerships" action={canManage && <button className="primary-action" onClick={() => setCreating(true)}><Plus /> New company</button>} />
+    <div className="data-table"><div className="table-row head"><span>Company</span><span>Credit facility</span><span>Outstanding</span><span>Team</span></div>{items.map(item => <button className="table-row corporate-row" key={item.id} disabled={!canManage} onClick={() => canManage && setMemberAccount(item)}><span><b>{item.name}</b><small>{item.billing_email} · {item.payment_terms_days}-day terms</small></span><strong>{money(item.credit_limit)}</strong><span>{money(item.outstanding)}</span><span>{item.members} members {canManage && <Plus />}</span></button>)}{items.length === 0 && <div className="empty-data">Create the first managed corporate account.</div>}</div>
+    {creating && <Modal title="Create a corporate account" onClose={() => setCreating(false)}><form className="admin-form" onSubmit={create}><label>Company name<input name="name" required autoFocus /></label><label>Billing email<input name="billing_email" type="email" required /></label><div className="form-row"><label>Phone<input name="phone" /></label><label>KRA PIN<input name="tax_pin" /></label></div><div className="form-row"><label>Credit limit (KES)<input name="credit_limit" type="number" min="0" required /></label><label>Approval threshold<input name="approval_threshold" type="number" min="0" defaultValue="0" /></label></div><label>Payment terms (days)<input name="payment_terms_days" type="number" min="0" max="120" defaultValue="30" /></label><button className="primary-action">Create managed account</button></form></Modal>}
+    {memberAccount && <Modal title={`Add ${memberAccount.name} member`} onClose={() => setMemberAccount(null)}><form className="admin-form" onSubmit={addMember}><label>Existing customer email<input name="email" type="email" required autoFocus /></label><div className="form-row"><label>Access role<select name="role"><option value="requester">Requester</option><option value="approver">Approver</option><option value="admin">Company admin</option></select></label><label>Spend limit<input name="spend_limit" type="number" min="0" /></label></div><label>Cost centre<input name="cost_center" placeholder="Marketing, People, Executive…" /></label><button className="primary-action">Grant company access</button></form></Modal>}
   </section>;
 }
 

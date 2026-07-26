@@ -3,6 +3,17 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 0.9.0 — Corporate commerce
+
+- Premium company workspace with credit visibility, purchasing controls and account-manager access.
+- Bulk order requests priced from the synchronized WooCommerce catalogue.
+- Requester, approver and company-admin roles with locked approval decisions and audit history.
+- Purchase orders, invoice billing, partial settlement records, credit-limit enforcement and
+  monthly statement aggregates.
+- Recurring weekly/monthly order generation with minute-level worker scheduling.
+- Staff provisioning for managed company accounts and member access in Cake City Command.
+- Approved corporate orders enter the existing durable WooCommerce, kitchen and delivery pipeline.
+
 ## 0.8.0 — Fulfilment operations
 
 - Premium kitchen production lanes, ownership, recipe snapshots, quality controls, inventory
@@ -80,6 +91,5 @@ strict TypeScript, a production Next.js build, API tests, and deployment configu
 
 ## Next releases
 
-- 0.8: kitchen production and driver operations
-- 0.9: corporate ordering and approval workflows
 - 1.0: hardened public launch, load/security/accessibility evidence
+- 1.1: consented behavioral intelligence, natural-language discovery and recommendation ranking

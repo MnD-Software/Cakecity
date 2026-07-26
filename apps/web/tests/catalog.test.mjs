@@ -62,3 +62,11 @@ test("rewards and moments are operational PWA account experiences", () => {
   assert.match(checkout, /Cake City credit/);
   assert.match(checkout, /setPaymentMethod\("wallet"\)/);
 });
+
+test("corporate portal exposes governed purchasing workflows", () => {
+  const source = readFileSync(new URL("../app/corporate/page.tsx", import.meta.url), "utf8");
+  for (const contract of [
+    "/v1/corporate/me", "/v1/corporate/requests", "/v1/corporate/invoices",
+    "/v1/corporate/recurring", "Idempotency-Key", "Approve & invoice",
+  ]) assert.match(source, new RegExp(contract.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")));
+});

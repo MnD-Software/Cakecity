@@ -20,3 +20,10 @@ test("staff mutations expose CRM and campaign workflows", () => {
   assert.match(page, /Role-secured access/);
   assert.match(page, /Every change audited/);
 });
+
+test("staff can visibly provision governed corporate accounts", () => {
+  const source = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /\/v1\/corporate\/admin\/accounts/);
+  assert.match(source, /Corporate partnerships/);
+  assert.match(source, /Grant company access/);
+});

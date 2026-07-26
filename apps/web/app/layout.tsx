@@ -3,6 +3,7 @@ import "./styles.css";
 import "./post.css";
 import "./driver-tracking.css";
 import "./loyalty.css";
+import "./corporate.css";
 import { PwaShell } from "@/components/pwa-shell";
 
 export const metadata: Metadata = {

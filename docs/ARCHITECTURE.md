@@ -10,13 +10,22 @@ production ticket or delivery assignment. Recipe snapshots preserve the exact ve
 inventory consumption is append-only, driver GPS is assignment-scoped, and delivery completion
 requires an expiring HMAC-protected OTP plus HTTPS photo and signature evidence.
 
+## Corporate commerce boundary
+
+Corporate members operate within one active company tenant and never query another account’s
+requests, invoices or schedules. Approval locks serialize credit decisions so concurrent orders
+cannot exceed the facility. An approved request creates a local order, invoice-credit intent and
+immutable invoice in one database transaction; the existing outbox then creates the WooCommerce
+order. WooCommerce receives corporate orders as processing but not falsely paid. Recurring
+schedules create new approval requests rather than bypassing company policy.
+
 ## Bounded applications
 
 - `apps/web`: premium customer storefront and PWA
 - `apps/admin`: role-secured Cake City Command for CRM, campaigns, customers, analytics, and audit
-- `apps/kitchen`: production queue and quality workflow (planned)
+- `apps/kitchen`: production queue, recipes, inventory and quality workflow
 - `apps/mobile`: Flutter customer app (planned)
-- `apps/driver`: Flutter delivery app (planned)
+- `apps/driver`: Flutter delivery operations and proof-of-delivery app
 - `backend/api`: authenticated FastAPI gateway
 - `backend/webhook-sync`: WooCommerce ingestion boundary
 

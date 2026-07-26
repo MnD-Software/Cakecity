@@ -13,6 +13,7 @@ from .services.loyalty import settle_order_rewards
 from .services.reminders import process_due_reminders
 from .services.campaigns import claim_due_campaign, complete_campaign_delivery, launch_campaign
 from .services.fulfilment import ensure_production_ticket, process_stage_command, synchronize_operational_state
+from .routes.corporate import process_due_corporate_recurring
 from zoneinfo import ZoneInfo
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
@@ -100,9 +101,9 @@ def build_woo_order_payload(order: Order, lines: list[OrderLine], intent: Paymen
         or intent.provider_payload.get("transaction_id") or intent.provider_reference
     )
     return {
-        "status": "processing", "set_paid": True,
+        "status": "processing", "set_paid": intent.method != "invoice",
         "payment_method": intent.method,
-        "payment_method_title": {"mpesa": "M-Pesa", "card": "Card", "wallet": "Cake City Wallet"}[intent.method],
+        "payment_method_title": {"mpesa": "M-Pesa", "card": "Card", "wallet": "Cake City Wallet", "invoice": "Corporate Invoice"}[intent.method],
         "transaction_id": transaction_id,
         "billing": {
             "first_name": order.customer_name, "email": order.customer_email,
@@ -227,13 +228,20 @@ async def process(event: OutboxEvent) -> None:
 
 async def run() -> None:
     last_reminder_date = None
+    last_corporate_check = None
     while True:
-        today = datetime.now(ZoneInfo("Africa/Nairobi")).date()
+        now = datetime.now(timezone.utc)
+        today = now.astimezone(ZoneInfo("Africa/Nairobi")).date()
         if today != last_reminder_date:
             async with SessionFactory() as db:
                 await process_due_reminders(db, today)
                 await db.commit()
             last_reminder_date = today
+        if last_corporate_check is None or (now - last_corporate_check).total_seconds() >= 60:
+            async with SessionFactory() as db:
+                await process_due_corporate_recurring(db, now)
+                await db.commit()
+            last_corporate_check = now
         async with SessionFactory() as db:
             event = await claim_event(db)
             webhook = None if event else await claim_webhook(db)

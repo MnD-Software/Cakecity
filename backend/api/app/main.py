@@ -16,6 +16,7 @@ from .routes.moments import router as moments_router
 from .routes.admin import router as admin_router
 from .routes.kitchen import router as kitchen_router
 from .routes.driver import router as driver_router
+from .routes.corporate import router as corporate_router
 from .settings import settings
 
 
@@ -28,7 +29,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Cake City Platform API",
-    version="0.8.3",
+    version="0.9.0",
     docs_url="/docs" if settings.environment != "production" else None,
     lifespan=lifespan,
 )
@@ -54,6 +55,7 @@ app.include_router(moments_router)
 app.include_router(admin_router)
 app.include_router(kitchen_router)
 app.include_router(driver_router)
+app.include_router(corporate_router)
 
 
 @app.get("/health", tags=["system"])

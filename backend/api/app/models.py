@@ -197,6 +197,125 @@ class OrderTimelineEvent(Base):
     )
 
 
+class CorporateAccount(Base):
+    __tablename__ = "corporate_accounts"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    slug: Mapped[str] = mapped_column(String(180), unique=True, nullable=False)
+    billing_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(32))
+    tax_pin: Mapped[str | None] = mapped_column(String(40))
+    billing_address: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    credit_limit: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0, nullable=False)
+    approval_threshold: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0, nullable=False)
+    payment_terms_days: Mapped[int] = mapped_column(Integer, default=30, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="active", nullable=False)
+    account_manager_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_corporate_accounts_state", "state", "name"),)
+
+
+class CorporateMember(Base):
+    __tablename__ = "corporate_members"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_accounts.id", ondelete="CASCADE"), nullable=False)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), unique=True, nullable=False)
+    role: Mapped[str] = mapped_column(String(24), default="requester", nullable=False)
+    spend_limit: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    cost_center: Mapped[str | None] = mapped_column(String(120))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("account_id", "customer_id", name="uq_corporate_member"),
+        Index("ix_corporate_member_customer", "customer_id", "is_active"),
+    )
+
+
+class CorporateOrderRequest(Base):
+    __tablename__ = "corporate_order_requests"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_accounts.id", ondelete="CASCADE"), nullable=False)
+    requester_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"), unique=True)
+    recurring_order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_recurring_orders.id", ondelete="SET NULL"))
+    reference: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(180), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    purchase_order_number: Mapped[str | None] = mapped_column(String(100))
+    cost_center: Mapped[str | None] = mapped_column(String(120))
+    fulfilment: Mapped[str] = mapped_column(String(24), nullable=False)
+    delivery_slot: Mapped[str | None] = mapped_column(String(80))
+    delivery_address: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    quote_snapshot: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    delivery_fee: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="pending_approval", nullable=False)
+    rejection_reason: Mapped[str | None] = mapped_column(String(500))
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    converted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (
+        Index("ix_corporate_request_queue", "account_id", "state", "submitted_at"),
+        Index("ix_corporate_request_requester", "requester_id", "submitted_at"),
+    )
+
+
+class CorporateApproval(Base):
+    __tablename__ = "corporate_approvals"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    request_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_order_requests.id", ondelete="CASCADE"), nullable=False)
+    actor_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    decision: Mapped[str] = mapped_column(String(24), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(500))
+    decided_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_corporate_approval_request", "request_id", "decided_at"),)
+
+
+class CorporateInvoice(Base):
+    __tablename__ = "corporate_invoices"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_accounts.id", ondelete="CASCADE"), nullable=False)
+    request_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_order_requests.id"), unique=True, nullable=False)
+    order_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id"), unique=True, nullable=False)
+    invoice_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    purchase_order_number: Mapped[str | None] = mapped_column(String(100))
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    amount_paid: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="open", nullable=False)
+    issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (Index("ix_corporate_invoice_account", "account_id", "state", "due_at"),)
+
+
+class CorporateInvoicePayment(Base):
+    __tablename__ = "corporate_invoice_payments"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    invoice_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_invoices.id", ondelete="CASCADE"), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    reference: Mapped[str] = mapped_column(String(180), unique=True, nullable=False)
+    recorded_by: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_corporate_invoice_payment", "invoice_id", "recorded_at"),)
+
+
+class CorporateRecurringOrder(Base):
+    __tablename__ = "corporate_recurring_orders"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("corporate_accounts.id", ondelete="CASCADE"), nullable=False)
+    owner_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(180), nullable=False)
+    cadence: Mapped[str] = mapped_column(String(24), nullable=False)
+    order_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_corporate_recurring_due", "is_active", "next_run_at"),)
+
+
 class NotificationPreference(Base):
     __tablename__ = "notification_preferences"
     customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True)

@@ -51,7 +51,7 @@ flutter run --dart-define=API_URL=http://127.0.0.1:8000
 ```
 
 Every push to `main` analyzes/tests the app and publishes a release APK plus Flutter Web bundle as
-the `cakecity-driver-v0.8.3` Actions artifact, configured for the Render API service.
+the versioned `cakecity-driver` Actions artifact, configured for the Render API service.
 
 ## Install the PWA representation
 
@@ -107,7 +107,9 @@ checkout, and save recurring family moments for automated birthday and anniversa
 
 Release v0.8 adds the kitchen board, recipe/inventory controls, manager dispatch, native Flutter
 driver operations, secure proof of delivery, live driver position, and customer chat. Corporate
-ordering and AI ranking remain subsequent releases.
+commerce is now available at `/corporate` with company accounts, governed bulk orders, approvals,
+PO-linked invoice billing, credit controls, statements, account managers, and recurring schedules.
+AI ranking remains a subsequent release.
 
 ## Configure delivery proof
 
