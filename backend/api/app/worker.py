@@ -4,8 +4,11 @@ from decimal import Decimal
 from uuid import UUID
 from sqlalchemy import or_, select
 from .database import SessionFactory
-from .models import Order, OrderLine, OutboxEvent, PaymentEvent, PaymentIntent
+from .models import Notification, Order, OrderLine, OutboxEvent, PaymentEvent, PaymentIntent, Product, WebhookEvent
 from .services.flutterwave import FlutterwaveClient, verified_flutterwave_payment
+from .services.order_tracking import append_stage, stage_from_woo, woo_meta
+from .services.synchronizer import upsert_product
+from .services.notifications import dispatch_notification
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
 
@@ -26,6 +29,18 @@ async def claim_event(db) -> OutboxEvent | None:
     event.state = "processing"
     event.attempts += 1
     event.available_at = now + timedelta(minutes=5)
+    await db.commit()
+    return event
+
+
+async def claim_webhook(db) -> WebhookEvent | None:
+    event = await db.scalar(select(WebhookEvent).where(
+        WebhookEvent.state.in_(("received", "retry")),
+    ).order_by(WebhookEvent.received_at).with_for_update(skip_locked=True).limit(1))
+    if not event:
+        return None
+    event.state = "processing"
+    event.attempts += 1
     await db.commit()
     return event
 
@@ -127,7 +142,46 @@ async def create_woocommerce_order(db, event: OutboxEvent) -> None:
         "order": build_woo_order_payload(order, lines, intent),
     })
     order.woo_id = int(woo["id"])
-    order.state = "confirmed"
+    await append_stage(db, order, "received", f"payment:{intent.id}", "payment")
+    await append_stage(db, order, "confirmed", f"woo-created:{order.woo_id}", "woocommerce")
+
+
+async def process_woo_webhook(event: WebhookEvent) -> None:
+    async with SessionFactory() as db:
+        attached = await db.get(WebhookEvent, event.id)
+        try:
+            resource = attached.resource.lower()
+            topic = attached.topic.lower()
+            if resource == "product":
+                if topic.endswith(".deleted"):
+                    product = await db.scalar(select(Product).where(Product.woo_id == int(attached.payload["id"])))
+                    if product:
+                        product.status = "deleted"
+                        product.in_stock = False
+                else:
+                    await upsert_product(db, attached.payload)
+            elif resource == "order":
+                reference = woo_meta(attached.payload, "_cakecity_reference")
+                order = await db.scalar(select(Order).where(
+                    or_(
+                        Order.woo_id == int(attached.payload.get("id", 0)),
+                        Order.reference == reference if reference else False,
+                    )
+                ))
+                stage = stage_from_woo(attached.payload)
+                if order and stage:
+                    order.woo_id = order.woo_id or int(attached.payload["id"])
+                    await append_stage(
+                        db, order, stage, f"woo-webhook:{attached.delivery_key}",
+                        "woocommerce", metadata={"woo_status": attached.payload.get("status")},
+                    )
+            attached.state = "processed"
+            attached.processed_at = datetime.now(timezone.utc)
+            attached.error = None
+        except Exception as exc:
+            attached.state = "dead" if attached.attempts >= 8 else "retry"
+            attached.error = str(exc)[:2000]
+        await db.commit()
 
 
 async def process(event: OutboxEvent) -> None:
@@ -138,6 +192,10 @@ async def process(event: OutboxEvent) -> None:
                 await verify_flutterwave(db, attached)
             elif attached.topic == "order.payment_confirmed":
                 await create_woocommerce_order(db, attached)
+            elif attached.topic == "notification.dispatch":
+                notification = await db.get(Notification, UUID(attached.payload["notification_id"]))
+                if notification:
+                    await dispatch_notification(db, notification)
             attached.state = "processed"
             attached.processed_at = datetime.now(timezone.utc)
             attached.last_error = None
@@ -152,8 +210,11 @@ async def run() -> None:
     while True:
         async with SessionFactory() as db:
             event = await claim_event(db)
+            webhook = None if event else await claim_webhook(db)
         if event:
             await process(event)
+        elif webhook:
+            await process_woo_webhook(webhook)
         else:
             await asyncio.sleep(2)
 

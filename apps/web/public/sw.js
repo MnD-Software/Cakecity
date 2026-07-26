@@ -1,8 +1,26 @@
-const CACHE = "cake-city-v2";
+const CACHE = "cake-city-v3";
 const SHELL = ["/", "/offline", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener("push", event => {
+  let message = { title: "Cake City", body: "You have a new update.", url: "/account/notifications", tag: "cakecity-update" };
+  try { message = { ...message, ...event.data.json() }; } catch {}
+  event.waitUntil(self.registration.showNotification(message.title, {
+    body: message.body, icon: "/icons/icon-192.png", badge: "/icons/icon-192.png",
+    tag: message.tag, data: { url: message.url }, vibrate: [120, 60, 120],
+  }));
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || "/account/notifications", self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(clients => {
+    const existing = clients.find(client => client.url === target);
+    return existing ? existing.focus() : self.clients.openWindow(target);
+  }));
 });
 
 self.addEventListener("activate", event => {

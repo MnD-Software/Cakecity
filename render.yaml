@@ -83,3 +83,13 @@ envVarGroups:
         sync: false
       - key: FLUTTERWAVE_WEBHOOK_SECRET
         sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: mailto:hello@cakecity.co.ke

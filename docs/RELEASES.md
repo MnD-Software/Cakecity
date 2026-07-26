@@ -33,9 +33,18 @@ strict TypeScript, a production Next.js build, API tests, and deployment configu
 - Paid-order creation in WooCommerce with duplicate-reference recovery
 - Installable PWA checkout and card-return experiences
 
+## 0.5.0 — Post-purchase journey and notifications
+
+- Owner-scoped order history, detail and current-catalogue quick reorder
+- Append-only nine-stage production and delivery timeline
+- Worker processing for signed WooCommerce product and order webhooks
+- Live animated PWA order tracking with automatic refresh
+- In-app notification inbox and per-channel customer preferences
+- Brevo transactional email and VAPID Web Push dispatch
+- Expired push-subscription cleanup and notification deep links
+
 ## Next releases
 
-- 0.5: accounts, animated tracking, notifications and quick reorder
 - 0.6: loyalty, wallet, referrals, memberships and event reminders
 - 0.7: admin, CRM, marketing automation and analytics
 - 0.8: kitchen production and driver operations

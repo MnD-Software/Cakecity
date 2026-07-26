@@ -51,11 +51,25 @@ configurable products, an offline-persistent cart, secure customer accounts, del
 selection, delivery slots and server-confirmed checkout quotes. It is installable as a PWA.
 
 The API includes WooCommerce synchronization, signed webhooks, secure identity, rotating
-refresh sessions, owner-scoped saved addresses, persistent carts, authoritative checkout pricing,
-M-Pesa STK Push, hosted card checkout and outbox-driven WooCommerce order creation.
+refresh sessions, owner-scoped saved addresses and orders, persistent carts, authoritative checkout
+pricing, M-Pesa STK Push, hosted card checkout and outbox-driven WooCommerce order creation.
+WooCommerce order changes feed an append-only nine-stage customer timeline. The installed PWA
+includes live tracking, safe quick reorder, an in-app inbox, email preferences and Web Push.
 
-Live production credentials, persistent loyalty, mobile apps, kitchen/driver surfaces, and AI ranking remain
+Live production credentials, persistent loyalty, native mobile apps, kitchen/driver surfaces, and AI ranking remain
 subsequent releases and are deliberately not represented as complete.
+
+## Configure customer notifications
+
+Email delivery uses Brevo when `BREVO_API_KEY` and `BREVO_SENDER_EMAIL` are configured.
+Browser/device push requires a VAPID key pair in `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`;
+set `VAPID_SUBJECT` to a monitored `mailto:` contact. In-app notifications work without either
+provider. SMS and WhatsApp preferences are stored for their provider integration release and are
+labelled provider-ready in the customer interface.
+
+Create WooCommerce webhooks for order created and updated events in addition to the product
+webhooks. Cake City maps standard Woo statuses and supports `_cakecity_stage` metadata for the
+full kitchen and delivery journey.
 
 ## Configure payments
 

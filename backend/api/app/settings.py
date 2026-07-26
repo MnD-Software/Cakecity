@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     woocommerce_url: str = ""
     woocommerce_consumer_key: str = ""
     woocommerce_consumer_secret: str = ""
+    brevo_api_key: str = ""
+    brevo_sender_email: str = ""
+    brevo_sender_name: str = "Cake City"
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = "mailto:hello@cakecity.co.ke"
     allowed_origins: list[str] = ["http://localhost:3000"]
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

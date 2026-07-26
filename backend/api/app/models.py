@@ -180,6 +180,62 @@ class OrderLine(Base):
     __table_args__ = (Index("ix_order_lines_order", "order_id"),)
 
 
+class OrderTimelineEvent(Base):
+    __tablename__ = "order_timeline_events"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    order_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
+    stage: Mapped[str] = mapped_column(String(40), nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    detail: Mapped[str] = mapped_column(String(500), default="", nullable=False)
+    source: Mapped[str] = mapped_column(String(40), nullable=False)
+    source_event_key: Mapped[str] = mapped_column(String(190), nullable=False)
+    event_metadata: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("order_id", "source_event_key", name="uq_order_timeline_source"),
+        Index("ix_order_timeline_order", "order_id", "occurred_at"),
+    )
+
+
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True)
+    in_app: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    email: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    push: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    sms: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    whatsapp: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(String(60), nullable=False)
+    title: Mapped[str] = mapped_column(String(180), nullable=False)
+    body: Mapped[str] = mapped_column(String(500), nullable=False)
+    data: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_notifications_customer", "customer_id", "created_at"),)
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    endpoint: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
+    p256dh: Mapped[str] = mapped_column(Text, nullable=False)
+    auth: Mapped[str] = mapped_column(Text, nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String(500))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_push_customer_active", "customer_id", "revoked_at"),)
+
+
 class PaymentIntent(Base):
     __tablename__ = "payment_intents"
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)

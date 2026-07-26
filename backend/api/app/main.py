@@ -9,6 +9,8 @@ from .routes.addresses import router as addresses_router
 from .routes.carts import router as carts_router
 from .routes.checkout import router as checkout_router
 from .routes.payments import router as payments_router
+from .routes.orders import router as orders_router
+from .routes.notifications import router as notifications_router
 from .settings import settings
 
 
@@ -21,7 +23,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Cake City Platform API",
-    version="0.4.0",
+    version="0.5.0",
     docs_url="/docs" if settings.environment != "production" else None,
     lifespan=lifespan,
 )
@@ -40,6 +42,8 @@ app.include_router(addresses_router)
 app.include_router(carts_router)
 app.include_router(checkout_router)
 app.include_router(payments_router)
+app.include_router(orders_router)
+app.include_router(notifications_router)
 
 
 @app.get("/health", tags=["system"])
