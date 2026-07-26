@@ -97,3 +97,9 @@ envVarGroups:
         sync: false
       - key: VAPID_SUBJECT
         value: mailto:hello@cakecity.co.ke
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

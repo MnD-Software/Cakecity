@@ -430,6 +430,138 @@ class CampaignDelivery(Base):
     )
 
 
+class Ingredient(Base):
+    __tablename__ = "ingredients"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(180), unique=True, nullable=False)
+    unit: Mapped[str] = mapped_column(String(30), nullable=False)
+    stock_on_hand: Mapped[Decimal] = mapped_column(Numeric(12, 3), default=0, nullable=False)
+    reorder_level: Mapped[Decimal] = mapped_column(Numeric(12, 3), default=0, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_ingredients_alert", "is_active", "stock_on_hand", "reorder_level"),)
+
+
+class Recipe(Base):
+    __tablename__ = "recipes"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    product_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(220), nullable=False)
+    yield_description: Mapped[str] = mapped_column(String(120), nullable=False)
+    preparation_minutes: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
+    instructions: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    allergens: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class RecipeIngredient(Base):
+    __tablename__ = "recipe_ingredients"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    recipe_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("recipes.id", ondelete="CASCADE"), nullable=False)
+    ingredient_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("ingredients.id"), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(12, 3), nullable=False)
+    __table_args__ = (UniqueConstraint("recipe_id", "ingredient_id", name="uq_recipe_ingredient"),)
+
+
+class ProductionTicket(Base):
+    __tablename__ = "production_tickets"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    order_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), unique=True, nullable=False)
+    state: Mapped[str] = mapped_column(String(40), default="confirmed", nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
+    assigned_to: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"))
+    recipe_snapshot: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    checklist: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_production_queue", "state", "priority", "created_at"),)
+
+
+class InventoryConsumption(Base):
+    __tablename__ = "inventory_consumptions"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    ticket_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("production_tickets.id", ondelete="CASCADE"), nullable=False)
+    ingredient_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("ingredients.id"), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(12, 3), nullable=False)
+    recorded_by: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(180), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_consumption_ticket", "ticket_id", "created_at"),)
+
+
+class OrderStageCommand(Base):
+    __tablename__ = "order_stage_commands"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    order_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
+    requested_stage: Mapped[str] = mapped_column(String(40), nullable=False)
+    source: Mapped[str] = mapped_column(String(30), nullable=False)
+    actor_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(180), unique=True, nullable=False)
+    command_metadata: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="pending", nullable=False)
+    failure_message: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (Index("ix_stage_commands_order", "order_id", "created_at"),)
+
+
+class DriverProfile(Base):
+    __tablename__ = "driver_profiles"
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True)
+    vehicle_type: Mapped[str] = mapped_column(String(60), nullable=False)
+    vehicle_registration: Mapped[str] = mapped_column(String(40), nullable=False)
+    is_available: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class DeliveryAssignment(Base):
+    __tablename__ = "delivery_assignments"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    order_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), unique=True, nullable=False)
+    driver_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    state: Mapped[str] = mapped_column(String(32), default="assigned", nullable=False)
+    delivery_otp_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    otp_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    otp_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    estimated_arrival_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    picked_up_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    proof_photo_url: Mapped[str | None] = mapped_column(Text)
+    signature_url: Mapped[str | None] = mapped_column(Text)
+    recipient_name: Mapped[str | None] = mapped_column(String(180))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_delivery_driver_state", "driver_id", "state", "created_at"),)
+
+
+class DriverLocation(Base):
+    __tablename__ = "driver_locations"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    assignment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("delivery_assignments.id", ondelete="CASCADE"), nullable=False)
+    latitude: Mapped[Decimal] = mapped_column(Numeric(10, 7), nullable=False)
+    longitude: Mapped[Decimal] = mapped_column(Numeric(10, 7), nullable=False)
+    accuracy_meters: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_driver_location_latest", "assignment_id", "recorded_at"),)
+
+
+class DeliveryMessage(Base):
+    __tablename__ = "delivery_messages"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    assignment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("delivery_assignments.id", ondelete="CASCADE"), nullable=False)
+    sender_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    sender_role: Mapped[str] = mapped_column(String(24), nullable=False)
+    body: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_delivery_messages_assignment", "assignment_id", "created_at"),)
+
+
 class PaymentIntent(Base):
     __tablename__ = "payment_intents"
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)

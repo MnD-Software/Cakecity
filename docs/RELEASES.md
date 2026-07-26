@@ -3,6 +3,17 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 0.8.0 — Fulfilment operations
+
+- Premium kitchen production lanes, ownership, recipe snapshots, quality controls, inventory
+  consumption, and low-stock alerts.
+- WooCommerce-authoritative, idempotent stage command pipeline through final delivery.
+- Manager dispatch overview with driver availability, vehicles, destinations, and ETA.
+- Flutter driver app with secure mobile sessions, live GPS, navigation, calls, chat, camera,
+  signature, delivery OTP, and proof upload.
+- Customer live driver position, ETA, identity, vehicle, and two-way delivery chat.
+- Automatic tested Flutter Web and Android APK artifacts in GitHub Actions.
+
 ## 0.2.0 — Platform foundation and installable preview
 
 - Premium responsive customer storefront

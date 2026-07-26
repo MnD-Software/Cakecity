@@ -47,3 +47,10 @@ class WooCommerceClient:
         if existing:
             return existing
         return await self._request("POST", "orders", json=payload["order"])
+
+    async def update_order_stage(self, woo_id: int, stage: str) -> dict:
+        status = "completed" if stage == "delivered" else "processing"
+        return await self._request("PUT", f"orders/{woo_id}", json={
+            "status": status,
+            "meta_data": [{"key": "_cakecity_stage", "value": stage}],
+        })

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./styles.css";
 import "./post.css";
+import "./driver-tracking.css";
 import "./loyalty.css";
 import { PwaShell } from "@/components/pwa-shell";
 

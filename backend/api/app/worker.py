@@ -4,7 +4,7 @@ from decimal import Decimal
 from uuid import UUID
 from sqlalchemy import or_, select
 from .database import SessionFactory
-from .models import Notification, Order, OrderLine, OutboxEvent, PaymentEvent, PaymentIntent, Product, WebhookEvent
+from .models import Notification, Order, OrderLine, OrderStageCommand, OutboxEvent, PaymentEvent, PaymentIntent, Product, WebhookEvent
 from .services.flutterwave import FlutterwaveClient, verified_flutterwave_payment
 from .services.order_tracking import append_stage, stage_from_woo, woo_meta
 from .services.synchronizer import upsert_product
@@ -12,6 +12,7 @@ from .services.notifications import dispatch_notification
 from .services.loyalty import settle_order_rewards
 from .services.reminders import process_due_reminders
 from .services.campaigns import claim_due_campaign, complete_campaign_delivery, launch_campaign
+from .services.fulfilment import ensure_production_ticket, process_stage_command, synchronize_operational_state
 from zoneinfo import ZoneInfo
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
@@ -148,6 +149,7 @@ async def create_woocommerce_order(db, event: OutboxEvent) -> None:
     order.woo_id = int(woo["id"])
     await append_stage(db, order, "received", f"payment:{intent.id}", "payment")
     await append_stage(db, order, "confirmed", f"woo-created:{order.woo_id}", "woocommerce")
+    await ensure_production_ticket(db, order)
 
 
 async def process_woo_webhook(event: WebhookEvent) -> None:
@@ -181,6 +183,7 @@ async def process_woo_webhook(event: WebhookEvent) -> None:
                     )
                     if appended and stage == "delivered":
                         await settle_order_rewards(db, order)
+                    await synchronize_operational_state(db, order, stage)
             attached.state = "processed"
             attached.processed_at = datetime.now(timezone.utc)
             attached.error = None
@@ -203,6 +206,10 @@ async def process(event: OutboxEvent) -> None:
                 if notification:
                     await dispatch_notification(db, notification)
                     await complete_campaign_delivery(db, notification)
+            elif attached.topic == "woocommerce.order_stage_update":
+                command = await db.get(OrderStageCommand, UUID(attached.payload["command_id"]))
+                if command:
+                    await process_stage_command(db, command)
             attached.state = "processed"
             attached.processed_at = datetime.now(timezone.utc)
             attached.last_error = None
@@ -210,6 +217,11 @@ async def process(event: OutboxEvent) -> None:
             attached.state = "dead" if attached.attempts >= 8 else "retry"
             attached.last_error = str(exc)[:2000]
             attached.available_at = datetime.now(timezone.utc) + timedelta(seconds=min(3600, 2 ** attached.attempts * 15))
+            if attached.topic == "woocommerce.order_stage_update" and attached.attempts >= 8:
+                command = await db.get(OrderStageCommand, UUID(attached.payload["command_id"]))
+                if command:
+                    command.state = "failed"
+                    command.failure_message = str(exc)[:500]
         await db.commit()
 
 

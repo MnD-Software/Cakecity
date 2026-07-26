@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     vapid_public_key: str = ""
     vapid_private_key: str = ""
     vapid_subject: str = "mailto:hello@cakecity.co.ke"
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

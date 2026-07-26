@@ -2,6 +2,14 @@
 
 WooCommerce remains the commercial authority for products, prices, coupons, inventory, customers, and orders. Webhooks enter through a signature-verifying ingestion service, are durably committed to PostgreSQL, and are handled by idempotent workers. Workers upsert a query-optimized PostgreSQL read model. Customer browsing reads only the platform database; it never waits on WooCommerce.
 
+## Fulfilment authority
+
+Kitchen and driver actions create idempotent stage commands in PostgreSQL. The worker sends each
+command to WooCommerce first and only then appends the local timeline and synchronizes the
+production ticket or delivery assignment. Recipe snapshots preserve the exact version used,
+inventory consumption is append-only, driver GPS is assignment-scoped, and delivery completion
+requires an expiring HMAC-protected OTP plus HTTPS photo and signature evidence.
+
 ## Bounded applications
 
 - `apps/web`: premium customer storefront and PWA

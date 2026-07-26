@@ -29,6 +29,30 @@ python -m app.bootstrap_admin
 
 Run that command from `backend/api`. Remove the one-time password environment value afterward.
 
+## Run the kitchen production board
+
+```powershell
+corepack pnpm --filter @cakecity/kitchen dev
+```
+
+Open `http://localhost:3002`. Kitchen, manager, and administrator accounts can claim tickets,
+follow versioned recipes, complete quality controls, and advance orders through WooCommerce.
+
+## Build the driver app
+
+The Flutter app in `apps/driver` provides secure sessions, assignments, GPS sharing, navigation,
+calling, customer chat, camera/signature capture, delivery OTP verification, and proof upload.
+
+```powershell
+cd apps/driver
+flutter create --platforms=android,web --project-name cakecity_driver .
+flutter pub get
+flutter run --dart-define=API_URL=http://127.0.0.1:8000
+```
+
+Every push to `main` analyzes/tests the app and publishes a release APK plus Flutter Web bundle as
+the `cakecity-driver-v0.8.0` Actions artifact. Set repository variable `RENDER_API_URL` first.
+
 ## Install the PWA representation
 
 Open the website in Chrome or Edge on localhost or HTTPS. Use the **Install app**
@@ -40,6 +64,8 @@ The installed experience launches in its own window and includes an offline fall
 - Vercel: import this repository and use the root `vercel.json`.
 - Admin Vercel project: set Root Directory to `apps/admin`, use its `vercel.json`, configure
   `NEXT_PUBLIC_API_URL`, and map the deployment to `admin.cakecity.co.ke`.
+- Kitchen Vercel project: set Root Directory to `apps/kitchen`, configure `NEXT_PUBLIC_API_URL`,
+  and map the deployment to `kitchen.cakecity.co.ke`.
 - Render: create a Blueprint from the root `render.yaml`, then provide the WooCommerce webhook secret.
 - Both services deploy only after the repository verification checks pass.
 
@@ -79,8 +105,15 @@ Delivered orders now settle immutable reward points, membership progress and qua
 Customers can convert points to spendable Cake City wallet credit, pay fully from that credit at
 checkout, and save recurring family moments for automated birthday and anniversary reminders.
 
-Live production credentials, native mobile apps, kitchen/driver surfaces, corporate workflows, and AI ranking remain
-subsequent releases and are deliberately not represented as complete.
+Release v0.8 adds the kitchen board, recipe/inventory controls, manager dispatch, native Flutter
+driver operations, secure proof of delivery, live driver position, and customer chat. Corporate
+ordering and AI ranking remain subsequent releases.
+
+## Configure delivery proof
+
+Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API and
+worker. Create driver accounts through `POST /v1/admin/staff`, then use
+`/v1/driver/dispatch/overview` and `/v1/driver/dispatch/assignments`.
 
 ## Configure customer notifications
 

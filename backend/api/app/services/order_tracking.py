@@ -47,6 +47,8 @@ async def append_stage(
 ) -> bool:
     if stage not in STAGES:
         return False
+    if order.state == stage:
+        return False
     if order.state in STAGES and STAGES.index(stage) < STAGES.index(order.state):
         return False
     if await db.scalar(select(OrderTimelineEvent.id).where(

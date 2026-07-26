@@ -5,10 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..auth import require_roles
+from ..auth import hash_password, require_roles
 from ..database import session
 from ..models import (
-    AuditEvent, CampaignDelivery, CRMActivity, CRMLead, CRMTask, Customer,
+    AuditEvent, CampaignDelivery, CRMActivity, CRMLead, CRMTask, Customer, DriverProfile,
     LoyaltyAccount, LoyaltyLedgerEntry, MarketingCampaign, Order, Referral,
 )
 from ..services.audit import record_audit
@@ -59,6 +59,17 @@ class CampaignInput(BaseModel):
 
 class ScheduleInput(BaseModel):
     scheduled_at: datetime
+
+
+class StaffInput(BaseModel):
+    email: str = Field(min_length=5, max_length=320)
+    password: str = Field(min_length=12, max_length=128)
+    first_name: str = Field(min_length=1, max_length=120)
+    last_name: str = Field(default="", max_length=120)
+    phone: str | None = Field(default=None, max_length=32)
+    role: str = Field(pattern="^(admin|manager|marketing|support|kitchen|driver)$")
+    vehicle_type: str | None = Field(default=None, max_length=60)
+    vehicle_registration: str | None = Field(default=None, max_length=40)
 
 
 def lead_read(lead: CRMLead) -> dict:
@@ -113,6 +124,32 @@ async def overview(_: Customer = Depends(staff), db: AsyncSession = Depends(sess
         "customers": customers, "repeat_purchase_rate": round(repeat_customers / len(customer_orders) * 100, 1) if customer_orders else 0,
         "completed_referrals": referral_count, "open_pipeline_value": f"{pipeline_value:.2f}",
     }
+
+
+@router.post("/staff", status_code=201)
+async def create_staff(payload: StaffInput, request: Request, actor: Customer = Depends(require_roles("admin")), db: AsyncSession = Depends(session)):
+    email = payload.email.strip().lower()
+    if await db.scalar(select(Customer.id).where(Customer.email == email)):
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+    if payload.role == "driver" and (not payload.vehicle_type or not payload.vehicle_registration):
+        raise HTTPException(status_code=422, detail="Driver vehicle details are required")
+    member = Customer(
+        email=email, password_hash=hash_password(payload.password),
+        first_name=payload.first_name.strip(), last_name=payload.last_name.strip(),
+        phone=payload.phone, role=payload.role,
+    )
+    db.add(member)
+    await db.flush()
+    if payload.role == "driver":
+        db.add(DriverProfile(
+            customer_id=member.id, vehicle_type=payload.vehicle_type,
+            vehicle_registration=payload.vehicle_registration,
+        ))
+    record_audit(db, actor, request, "staff.created", "customer", member.id, {
+        "email": email, "role": payload.role, "first_name": member.first_name,
+    })
+    await db.commit()
+    return {"id": str(member.id), "email": member.email, "role": member.role}
 
 
 @router.get("/analytics/revenue")

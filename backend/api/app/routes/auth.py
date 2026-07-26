@@ -53,6 +53,14 @@ class AuthResponse(BaseModel):
     customer: CustomerRead
 
 
+class MobileAuthResponse(AuthResponse):
+    refresh_token: str
+
+
+class MobileRefreshRequest(BaseModel):
+    refresh_token: str = Field(min_length=32, max_length=200)
+
+
 def customer_read(customer: Customer) -> CustomerRead:
     return CustomerRead.model_validate(customer, from_attributes=True)
 
@@ -86,6 +94,21 @@ async def issue_session(customer: Customer, request: Request, response: Response
     )
 
 
+async def issue_mobile_session(customer: Customer, request: Request, db: AsyncSession, family_id: UUID | None = None) -> MobileAuthResponse:
+    refresh, token_hash = new_refresh_token()
+    db.add(RefreshSession(
+        customer_id=customer.id, family_id=family_id or uuid4(), token_hash=token_hash,
+        user_agent=request.headers.get("user-agent", "")[:500], ip_address=request_ip(request),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_days),
+    ))
+    await db.commit()
+    return MobileAuthResponse(
+        access_token=create_access_token(customer.id, customer.role),
+        expires_in=settings.access_token_minutes * 60, customer=customer_read(customer),
+        refresh_token=refresh,
+    )
+
+
 @router.post("/register", response_model=AuthResponse, status_code=201)
 async def register(payload: RegisterRequest, request: Request, response: Response, db: AsyncSession = Depends(session)):
     require_trusted_origin(request)
@@ -107,6 +130,14 @@ async def login(payload: LoginRequest, request: Request, response: Response, db:
     if not customer or not customer.is_active or not verify_password(payload.password, customer.password_hash):
         raise HTTPException(status_code=401, detail="Email or password is incorrect")
     return await issue_session(customer, request, response, db)
+
+
+@router.post("/mobile/login", response_model=MobileAuthResponse)
+async def mobile_login(payload: LoginRequest, request: Request, db: AsyncSession = Depends(session)):
+    customer = await db.scalar(select(Customer).where(Customer.email == payload.email.strip().lower()))
+    if not customer or not customer.is_active or not verify_password(payload.password, customer.password_hash):
+        raise HTTPException(status_code=401, detail="Email or password is incorrect")
+    return await issue_mobile_session(customer, request, db)
 
 
 @router.post("/refresh", response_model=AuthResponse)
@@ -134,6 +165,39 @@ async def refresh(request: Request, response: Response, db: AsyncSession = Depen
     active.revoked_at = datetime.now(timezone.utc)
     active.last_used_at = active.revoked_at
     return await issue_session(customer, request, response, db, active.family_id)
+
+
+@router.post("/mobile/refresh", response_model=MobileAuthResponse)
+async def mobile_refresh(payload: MobileRefreshRequest, request: Request, db: AsyncSession = Depends(session)):
+    active = await db.scalar(select(RefreshSession).where(
+        RefreshSession.token_hash == hash_refresh_token(payload.refresh_token),
+    ).with_for_update())
+    if not active:
+        raise HTTPException(status_code=401, detail="Mobile refresh session is invalid")
+    if active.revoked_at is not None:
+        await db.execute(update(RefreshSession).where(
+            RefreshSession.family_id == active.family_id,
+            RefreshSession.revoked_at.is_(None),
+        ).values(revoked_at=datetime.now(timezone.utc)))
+        await db.commit()
+        raise HTTPException(status_code=401, detail="Mobile refresh token reuse detected; session family revoked")
+    if active.expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(status_code=401, detail="Mobile refresh session expired")
+    customer = await db.scalar(select(Customer).where(Customer.id == active.customer_id, Customer.is_active.is_(True)))
+    if not customer:
+        raise HTTPException(status_code=401, detail="Customer session is no longer active")
+    active.revoked_at = datetime.now(timezone.utc)
+    active.last_used_at = active.revoked_at
+    return await issue_mobile_session(customer, request, db, active.family_id)
+
+
+@router.post("/mobile/logout", status_code=204)
+async def mobile_logout(payload: MobileRefreshRequest, db: AsyncSession = Depends(session)):
+    await db.execute(update(RefreshSession).where(
+        RefreshSession.token_hash == hash_refresh_token(payload.refresh_token),
+        RefreshSession.revoked_at.is_(None),
+    ).values(revoked_at=datetime.now(timezone.utc)))
+    await db.commit()
 
 
 @router.post("/logout", status_code=204)

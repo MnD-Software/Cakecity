@@ -4,10 +4,19 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth import current_customer
 from ..database import session
-from ..models import Customer, Order, OrderLine, OrderTimelineEvent, Product
+from pydantic import BaseModel, Field
+from ..models import (
+    Customer, DeliveryAssignment, DeliveryMessage, DriverLocation, DriverProfile,
+    Order, OrderLine, OrderTimelineEvent, Product,
+)
+from ..services.loyalty import notify
 from ..services.order_tracking import STAGES
 
 router = APIRouter(prefix="/v1/account/orders", tags=["orders"])
+
+
+class DeliveryMessageInput(BaseModel):
+    body: str = Field(min_length=1, max_length=500)
 
 
 def money(value) -> str:
@@ -46,6 +55,25 @@ async def order_detail(reference: str, customer: Customer = Depends(current_cust
     events = (await db.scalars(select(OrderTimelineEvent).where(
         OrderTimelineEvent.order_id == order.id,
     ).order_by(OrderTimelineEvent.occurred_at))).all()
+    delivery = await db.scalar(select(DeliveryAssignment).where(DeliveryAssignment.order_id == order.id))
+    driver_tracking = None
+    if delivery:
+        driver = await db.get(Customer, delivery.driver_id)
+        profile = await db.get(DriverProfile, delivery.driver_id)
+        location = await db.scalar(select(DriverLocation).where(
+            DriverLocation.assignment_id == delivery.id,
+        ).order_by(DriverLocation.recorded_at.desc()).limit(1))
+        driver_tracking = {
+            "assignment_id": str(delivery.id), "state": delivery.state,
+            "driver_name": driver.first_name if driver else "Cake City driver",
+            "vehicle": f"{profile.vehicle_type} · {profile.vehicle_registration}" if profile else None,
+            "estimated_arrival_at": delivery.estimated_arrival_at,
+            "location": ({
+                "latitude": str(location.latitude), "longitude": str(location.longitude),
+                "accuracy_meters": str(location.accuracy_meters) if location.accuracy_meters is not None else None,
+                "recorded_at": location.recorded_at,
+            } if location else None),
+        }
     return {
         **order_summary(order), "customer_name": order.customer_name,
         "delivery_address": order.delivery_address, "stages": STAGES,
@@ -58,6 +86,7 @@ async def order_detail(reference: str, customer: Customer = Depends(current_cust
             "id": str(event.id), "stage": event.stage, "title": event.title,
             "detail": event.detail, "occurred_at": event.occurred_at,
         } for event in events],
+        "driver_tracking": driver_tracking,
     }
 
 
@@ -90,3 +119,31 @@ async def reorder(reference: str, customer: Customer = Depends(current_customer)
         "source_reference": order.reference, "available": available, "unavailable": unavailable,
         "message": "Prices and availability were refreshed from the current catalogue.",
     }
+
+
+@router.get("/{reference}/delivery/messages")
+async def delivery_messages(reference: str, customer: Customer = Depends(current_customer), db: AsyncSession = Depends(session)):
+    order = await owned_order(db, customer.id, reference)
+    assignment = await db.scalar(select(DeliveryAssignment).where(DeliveryAssignment.order_id == order.id))
+    if not assignment:
+        return []
+    items = (await db.scalars(select(DeliveryMessage).where(
+        DeliveryMessage.assignment_id == assignment.id,
+    ).order_by(DeliveryMessage.created_at).limit(200))).all()
+    return [{"id": str(item.id), "sender_role": item.sender_role, "body": item.body, "created_at": item.created_at} for item in items]
+
+
+@router.post("/{reference}/delivery/messages", status_code=201)
+async def send_delivery_message(reference: str, payload: DeliveryMessageInput, customer: Customer = Depends(current_customer), db: AsyncSession = Depends(session)):
+    order = await owned_order(db, customer.id, reference)
+    assignment = await db.scalar(select(DeliveryAssignment).where(DeliveryAssignment.order_id == order.id))
+    if not assignment or assignment.state == "delivered":
+        raise HTTPException(status_code=409, detail="Live driver chat is not available")
+    message = DeliveryMessage(
+        assignment_id=assignment.id, sender_id=customer.id,
+        sender_role="customer", body=payload.body.strip(),
+    )
+    db.add(message)
+    await notify(db, assignment.driver_id, "customer_message", f"Message for {order.reference}", message.body)
+    await db.commit()
+    return {"id": str(message.id), "created": True}
