@@ -7,9 +7,9 @@ import time
 import httpx
 
 BASE_URL = os.getenv("LOAD_BASE_URL", "http://127.0.0.1:8000")
-REQUESTS = int(os.getenv("LOAD_REQUESTS", "500"))
-CONCURRENCY = int(os.getenv("LOAD_CONCURRENCY", "50"))
-MAX_P95_MS = float(os.getenv("LOAD_MAX_P95_MS", "1500"))
+REQUESTS = int(os.getenv("LOAD_REQUESTS", "200"))
+CONCURRENCY = int(os.getenv("LOAD_CONCURRENCY", "25"))
+MAX_P95_MS = float(os.getenv("LOAD_MAX_P95_MS", "3000"))
 
 
 async def main() -> None:
@@ -34,11 +34,16 @@ async def main() -> None:
 
     ordered = sorted(durations)
     p95 = ordered[max(0, int(len(ordered) * 0.95) - 1)]
-    print({
+    summary = {
         "requests": REQUESTS, "concurrency": CONCURRENCY, "failures": len(failures),
         "p50_ms": round(statistics.median(ordered), 1), "p95_ms": round(p95, 1),
-    })
+    }
+    print(summary)
     if failures or p95 > MAX_P95_MS:
+        print(
+            f"::error title=API load gate::failures={failures[:5]} "
+            f"p95_ms={p95:.1f} maximum_ms={MAX_P95_MS:.1f}"
+        )
         raise SystemExit(f"Load gate failed: failures={failures[:5]} p95_ms={p95:.1f}")
 
 

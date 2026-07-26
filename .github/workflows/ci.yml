@@ -7,11 +7,11 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.9.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -36,7 +36,7 @@ jobs:
           pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/ --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=.lighthouseci/reports/home.json --quiet
           pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/corporate --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=.lighthouseci/reports/corporate.json --quiet
           node scripts/assert_lighthouse.mjs .lighthouseci/reports/home.json .lighthouseci/reports/corporate.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: lighthouse-reports
@@ -47,8 +47,8 @@ jobs:
       run:
         working-directory: backend/api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -86,8 +86,8 @@ jobs:
       ALLOWED_HOSTS: '["127.0.0.1","localhost"]'
       RATE_LIMIT_PER_MINUTE: 1000
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -106,11 +106,11 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.9.0
       - run: pip install pip-audit
@@ -122,7 +122,7 @@ jobs:
       run:
         working-directory: apps/driver
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -133,9 +133,9 @@ jobs:
       - run: flutter test
       - run: flutter build web --release --dart-define=API_URL=https://cakecity-api.onrender.com
       - run: flutter build apk --release --dart-define=API_URL=https://cakecity-api.onrender.com
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: cakecity-driver-v1.0.1
+          name: cakecity-driver-v1.0.2
           path: |
             apps/driver/build/app/outputs/flutter-apk/app-release.apk
             apps/driver/build/web

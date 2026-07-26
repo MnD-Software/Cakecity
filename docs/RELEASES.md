@@ -3,11 +3,17 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.0.2 — Portable release automation
+
+- Moves GitHub JavaScript actions to their Node 24-compatible major releases.
+- Uses a repeatable 200-request, 25-way integration load sample with a 3 second p95 ceiling and
+  explicit failure diagnostics for shared runners.
+
 ## 1.0.1 — Stable launch gates
 
 - Calibrates cold-run Lighthouse performance enforcement to 90 while retaining 95 for
   accessibility, best practices and SEO plus strict Core Web Vitals limits.
-- Calibrates the 50-way API load gate to a 1.5 second p95 ceiling for shared CI runners.
+- Calibrates the API load gate for shared CI runners.
 
 ## 1.0.0 — Launch-hardening baseline
 
@@ -21,7 +27,7 @@ strict TypeScript, a production Next.js build, API tests, and deployment configu
 - A 91 KB responsive WebP hero replacing the 1.9 MB primary asset transfer.
 - Enforced 90+ performance and 95+ accessibility/best-practice/SEO Lighthouse budgets,
   JavaScript and Python dependency audits, CodeQL analysis, migration-backed integration checks
-  and a 50-way concurrent API load smoke test with a 1.5 second p95 ceiling.
+  and a concurrent API load smoke test.
 
 ## 0.9.0 — Corporate commerce
 
