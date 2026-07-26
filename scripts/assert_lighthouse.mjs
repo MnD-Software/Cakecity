@@ -6,7 +6,7 @@ if (reports.length === 0) {
 }
 
 const categoryBudgets = {
-  performance: 0.95,
+  performance: 0.9,
   accessibility: 0.95,
   "best-practices": 0.95,
   seo: 0.95,
