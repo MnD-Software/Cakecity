@@ -22,9 +22,19 @@ strict TypeScript, a production Next.js build, API tests, and deployment configu
 - Premium account and delivery-time checkout experiences
 - Append-only, checksum-protected production migration runner
 
+## 0.4.0 — Payments and WooCommerce order authority
+
+- Idempotent payment intents for signed-in and guest customers
+- Safaricom M-Pesa STK Push with amount-bound callback processing
+- Flutterwave hosted card checkout with HMAC webhook verification
+- Server-side Flutterwave transaction verification before order release
+- Payment recovery, polling, cancellation, mismatch and manual-review states
+- Transactional outbox with leases, exponential retries and dead-letter state
+- Paid-order creation in WooCommerce with duplicate-reference recovery
+- Installable PWA checkout and card-return experiences
+
 ## Next releases
 
-- 0.4: M-Pesa/card payment orchestration and WooCommerce order authority
 - 0.5: accounts, animated tracking, notifications and quick reorder
 - 0.6: loyalty, wallet, referrals, memberships and event reminders
 - 0.7: admin, CRM, marketing automation and analytics

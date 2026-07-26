@@ -14,6 +14,20 @@ class Settings(BaseSettings):
     refresh_token_days: int = 30
     secure_cookies: bool = False
     cookie_domain: str | None = None
+    public_api_url: str = "http://127.0.0.1:8000"
+    storefront_url: str = "http://localhost:3000"
+    mpesa_base_url: str = "https://sandbox.safaricom.co.ke"
+    mpesa_consumer_key: str = ""
+    mpesa_consumer_secret: str = ""
+    mpesa_shortcode: str = ""
+    mpesa_passkey: str = ""
+    mpesa_callback_secret: str = ""
+    flutterwave_base_url: str = "https://api.flutterwave.com"
+    flutterwave_secret_key: str = ""
+    flutterwave_webhook_secret: str = ""
+    woocommerce_url: str = ""
+    woocommerce_consumer_key: str = ""
+    woocommerce_consumer_secret: str = ""
     allowed_origins: list[str] = ["http://localhost:3000"]
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

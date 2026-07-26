@@ -51,7 +51,22 @@ configurable products, an offline-persistent cart, secure customer accounts, del
 selection, delivery slots and server-confirmed checkout quotes. It is installable as a PWA.
 
 The API includes WooCommerce synchronization, signed webhooks, secure identity, rotating
-refresh sessions, owner-scoped saved addresses, persistent carts and authoritative checkout pricing.
+refresh sessions, owner-scoped saved addresses, persistent carts, authoritative checkout pricing,
+M-Pesa STK Push, hosted card checkout and outbox-driven WooCommerce order creation.
 
-Payment capture, persistent loyalty, mobile apps, kitchen/driver surfaces, and AI ranking remain
+Live production credentials, persistent loyalty, mobile apps, kitchen/driver surfaces, and AI ranking remain
 subsequent releases and are deliberately not represented as complete.
+
+## Configure payments
+
+M-Pesa requires a Daraja consumer key, consumer secret, shortcode, passkey and a strong callback
+secret. Configure the callback URL as:
+
+`https://<api-host>/v1/payments/callbacks/mpesa/<MPESA_CALLBACK_SECRET>`
+
+Flutterwave requires its server secret key and webhook secret. Configure its webhook URL as:
+
+`https://<api-host>/v1/payments/callbacks/flutterwave`
+
+Payment endpoints deliberately return `503` until all credentials for the selected provider are
+configured. Never expose either provider secret to the browser.

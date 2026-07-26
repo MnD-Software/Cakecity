@@ -25,3 +25,25 @@ class WooCommerceClient:
                 if page >= int(response.headers.get("X-WP-TotalPages", page)):
                     return
                 page += 1
+
+    async def _request(self, method: str, path: str, **kwargs) -> dict | list:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0), auth=self.auth) as client:
+            response = await client.request(method, f"{self.base_url}/wp-json/wc/v3/{path.lstrip('/')}", **kwargs)
+            response.raise_for_status()
+            return response.json()
+
+    async def find_order_by_reference(self, reference: str) -> dict | None:
+        candidates = await self._request("GET", "orders", params={
+            "search": reference, "status": "any", "per_page": 20,
+        })
+        for order in candidates:
+            metadata = {item.get("key"): item.get("value") for item in order.get("meta_data", [])}
+            if metadata.get("_cakecity_reference") == reference:
+                return order
+        return None
+
+    async def create_paid_order(self, payload: dict) -> dict:
+        existing = await self.find_order_by_reference(payload["reference"])
+        if existing:
+            return existing
+        return await self._request("POST", "orders", json=payload["order"])

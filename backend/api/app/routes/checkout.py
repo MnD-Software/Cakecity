@@ -1,4 +1,5 @@
 from decimal import Decimal
+from dataclasses import dataclass
 from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -60,8 +61,15 @@ class CheckoutQuote(BaseModel):
     quote_version: str = "2026-07"
 
 
-@router.post("/quote", response_model=CheckoutQuote)
-async def prepare_quote(payload: CheckoutQuoteInput, db: AsyncSession = Depends(session)):
+@dataclass
+class PricedItem:
+    requested: QuoteItemInput
+    product: Product
+    unit_price: Decimal
+    line_total: Decimal
+
+
+async def price_checkout(payload: CheckoutQuoteInput, db: AsyncSession) -> tuple[CheckoutQuote, list[PricedItem]]:
     slugs = {item.product_slug for item in payload.items}
     products = {
         product.slug: product for product in (await db.scalars(
@@ -69,6 +77,7 @@ async def prepare_quote(payload: CheckoutQuoteInput, db: AsyncSession = Depends(
         )).all()
     }
     lines: list[QuoteLine] = []
+    priced: list[PricedItem] = []
     subtotal = Decimal("0")
     for requested in payload.items:
         product = products.get(requested.product_slug)
@@ -79,15 +88,21 @@ async def prepare_quote(payload: CheckoutQuoteInput, db: AsyncSession = Depends(
         unit = calculate_unit_price(Decimal(product.price_kes), requested.size, requested.add_ons)
         line_total = unit * requested.quantity
         subtotal += line_total
+        priced.append(PricedItem(requested, product, unit, line_total))
         lines.append(QuoteLine(
             product_slug=product.slug, name=product.name, quantity=requested.quantity,
             unit_price=unit, line_total=line_total, available=True,
         ))
     delivery_fee = Decimal("0") if payload.fulfilment == "pickup" or subtotal >= 5000 else Decimal("350")
-    # Coupon validation remains at the WooCommerce authority boundary in the payment release.
     discount = Decimal("0")
     return CheckoutQuote(
         lines=lines, subtotal=subtotal, delivery_fee=delivery_fee, discount=discount,
         total=subtotal + delivery_fee - discount, fulfilment=payload.fulfilment,
         requires_address=payload.fulfilment == "delivery",
-    )
+    ), priced
+
+
+@router.post("/quote", response_model=CheckoutQuote)
+async def prepare_quote(payload: CheckoutQuoteInput, db: AsyncSession = Depends(session)):
+    quote, _ = await price_checkout(payload, db)
+    return quote

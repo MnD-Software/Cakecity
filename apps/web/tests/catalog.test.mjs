@@ -40,3 +40,14 @@ test("account UI uses register, login, refresh and logout session contracts", ()
   assert.match(account, /authenticate\(mode/);
   assert.match(account, /await logout\(\)/);
 });
+
+test("checkout supports M-Pesa, hosted cards and recoverable payment return", () => {
+  const checkout = readFileSync(new URL("../app/checkout/page.tsx", import.meta.url), "utf8");
+  const returned = readFileSync(new URL("../app/checkout/payment-return/page.tsx", import.meta.url), "utf8");
+  assert.match(checkout, /Idempotency-Key/);
+  assert.match(checkout, /method: paymentMethod/);
+  assert.match(checkout, /M-Pesa/);
+  assert.match(checkout, /Visa, Mastercard and Amex/);
+  assert.match(returned, /cakecity-active-payment/);
+  assert.match(returned, /\/v1\/payments\/intents/);
+});

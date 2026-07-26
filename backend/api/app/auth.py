@@ -97,6 +97,18 @@ async def current_customer(
     return customer
 
 
+async def optional_customer(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
+    db: AsyncSession = Depends(session),
+) -> Customer | None:
+    if not credentials:
+        return None
+    claims = decode_access_token(credentials.credentials)
+    return await db.scalar(select(Customer).where(
+        Customer.id == UUID(claims["sub"]), Customer.is_active.is_(True)
+    ))
+
+
 def request_ip(request: Request) -> str | None:
     forwarded = request.headers.get("x-forwarded-for")
     return (forwarded.split(",")[0].strip() if forwarded else request.client.host if request.client else None)

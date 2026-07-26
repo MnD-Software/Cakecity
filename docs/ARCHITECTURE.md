@@ -31,6 +31,17 @@ All privileged state transitions are server-side, role checked, and audit logged
 - Saved addresses are owner-scoped by customer ID and never accepted from an access-token claim without reloading the active customer.
 - Database migrations are append-only and checksum protected during Render pre-deploy.
 
+## Payments and order release
+
+- Every payment creation requires an idempotency key and recalculates the checkout from synchronized product records.
+- Client secrets are stored only as hashes and are sent in headers rather than query strings during status recovery.
+- M-Pesa STK callbacks must match both the provider request ID and exact expected amount before an order becomes paid.
+- Card data never enters Cake City systems. Flutterwave hosts card collection, signs webhook payloads, and is queried server-side to verify status, exact amount, KES currency and Cake City reference.
+- Provider callbacks persist minimal state and return quickly. Network work is performed by the outbox worker.
+- A paid local order is an orchestration projection. The worker creates the authoritative WooCommerce order and records its WooCommerce ID.
+- WooCommerce retries search for the private Cake City reference before creating an order, reducing duplicate creation after ambiguous network failures.
+- Outbox events use row locking, five-minute processing leases, exponential retry and a dead state after eight failed attempts.
+
 ## Synchronization guarantees
 
 - Webhook signatures are verified with HMAC-SHA256 using constant-time comparison.
