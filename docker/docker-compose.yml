@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cakecity
+      POSTGRES_USER: cakecity
+      POSTGRES_PASSWORD: local-only
+    ports: ["5432:5432"]
+    volumes: [cakecity_pg:/var/lib/postgresql/data]
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports: ["5672:5672", "15672:15672"]
+  api:
+    image: python:3.12-slim
+    working_dir: /app
+    command: sh -c "pip install -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --reload"
+    volumes: ["../backend/api:/app"]
+    ports: ["8000:8000"]
+    depends_on: [postgres, redis, rabbitmq]
+volumes:
+  cakecity_pg:

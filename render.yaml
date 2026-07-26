@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: cakecity-api
+    runtime: docker
+    dockerfilePath: ./backend/api/Dockerfile
+    dockerContext: ./backend/api
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cakecity-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: cakecity-redis
+          property: connectionString
+      - key: WOOCOMMERCE_WEBHOOK_SECRET
+        sync: false
+  - type: keyvalue
+    name: cakecity-redis
+    ipAllowList: []
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+databases:
+  - name: cakecity-postgres
+    plan: basic-256mb
+    databaseName: cakecity
+    user: cakecity

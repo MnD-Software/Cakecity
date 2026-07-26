@@ -1,0 +1,51 @@
+# Cake City Platform
+
+A premium, Kenya-first commerce platform with WooCommerce as the source of truth and a locally owned high-performance browsing model.
+
+## Run the customer experience
+
+```powershell
+corepack pnpm install
+corepack pnpm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Install the PWA representation
+
+Open the website in Chrome or Edge on localhost or HTTPS. Use the **Install app**
+prompt shown by Cake City, or choose **Install Cake City** from the browser menu.
+The installed experience launches in its own window and includes an offline fallback.
+
+## Deployment
+
+- Vercel: import this repository and use the root `vercel.json`.
+- Render: create a Blueprint from the root `render.yaml`, then provide the WooCommerce webhook secret.
+- Both services deploy only after the repository verification checks pass.
+
+## Run supporting services
+
+```powershell
+docker compose -f docker/docker-compose.yml up
+```
+
+The API health endpoint is `http://localhost:8000/health`. Copy `.env.example` to `.env` and supply real secrets only in the deployment environment.
+
+## Validate the synchronization boundary
+
+```powershell
+$env:PYTHONPATH = (Resolve-Path backend/api)
+python -m pytest backend/api/tests -q
+```
+
+Create WooCommerce webhooks for product created, updated, and deleted events pointing to:
+
+`https://<api-host>/v1/webhooks/woocommerce`
+
+Use the same strong random secret for WooCommerce and `WOOCOMMERCE_WEBHOOK_SECRET`.
+
+## Current executable slice
+
+The web app includes premium responsive discovery, occasion navigation, natural-language-style search, favourites, configurable products, cart persistence within the session, free-delivery progress, delivery-time intent, accessibility semantics, metadata, and a PWA manifest. The backend foundation documents and enforces the WooCommerce synchronization boundary.
+
+Production integrations, authentication, payments, persistent loyalty, mobile apps, kitchen/driver surfaces, and AI ranking require credentials and subsequent delivery phases; they are deliberately not represented as complete.
