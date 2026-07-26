@@ -55,8 +55,11 @@ refresh sessions, owner-scoped saved addresses and orders, persistent carts, aut
 pricing, M-Pesa STK Push, hosted card checkout and outbox-driven WooCommerce order creation.
 WooCommerce order changes feed an append-only nine-stage customer timeline. The installed PWA
 includes live tracking, safe quick reorder, an in-app inbox, email preferences and Web Push.
+Delivered orders now settle immutable reward points, membership progress and qualifying referrals.
+Customers can convert points to spendable Cake City wallet credit, pay fully from that credit at
+checkout, and save recurring family moments for automated birthday and anniversary reminders.
 
-Live production credentials, persistent loyalty, native mobile apps, kitchen/driver surfaces, and AI ranking remain
+Live production credentials, native mobile apps, kitchen/driver surfaces, marketing administration, and AI ranking remain
 subsequent releases and are deliberately not represented as complete.
 
 ## Configure customer notifications

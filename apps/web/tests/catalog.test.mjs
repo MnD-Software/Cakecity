@@ -51,3 +51,14 @@ test("checkout supports M-Pesa, hosted cards and recoverable payment return", ()
   assert.match(returned, /cakecity-active-payment/);
   assert.match(returned, /\/v1\/payments\/intents/);
 });
+
+test("rewards and moments are operational PWA account experiences", () => {
+  const rewards = readFileSync(new URL("../app/account/rewards/page.tsx", import.meta.url), "utf8");
+  const moments = readFileSync(new URL("../app/account/moments/page.tsx", import.meta.url), "utf8");
+  const checkout = readFileSync(new URL("../app/checkout/page.tsx", import.meta.url), "utf8");
+  assert.match(rewards, /\/v1\/account\/rewards\/redeem/);
+  assert.match(rewards, /\/v1\/account\/rewards\/referrals\/apply/);
+  assert.match(moments, /\/v1\/account\/moments/);
+  assert.match(checkout, /Cake City credit/);
+  assert.match(checkout, /setPaymentMethod\("wallet"\)/);
+});

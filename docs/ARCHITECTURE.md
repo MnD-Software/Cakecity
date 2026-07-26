@@ -1,6 +1,6 @@
 # Cake City platform architecture
 
-WooCommerce remains the commercial authority for products, prices, coupons, inventory, customers, and orders. Webhooks enter through a signature-verifying ingestion service, are placed on RabbitMQ, and are handled by idempotent workers. Workers upsert a query-optimized PostgreSQL read model and invalidate Redis keys. Customer browsing reads only PostgreSQL/Redis; it never waits on WooCommerce.
+WooCommerce remains the commercial authority for products, prices, coupons, inventory, customers, and orders. Webhooks enter through a signature-verifying ingestion service, are durably committed to PostgreSQL, and are handled by idempotent workers. Workers upsert a query-optimized PostgreSQL read model. Customer browsing reads only the platform database; it never waits on WooCommerce.
 
 ## Bounded applications
 
@@ -19,7 +19,7 @@ WooCommerce remains the commercial authority for products, prices, coupons, inve
 3. Kitchen and driver operations with status events and live tracking.
 4. AI search, recommendation ranking, prediction, and support assistants after sufficient consented behavioral data exists.
 
-All privileged state transitions are server-side, role checked, and audit logged. Payment and webhook operations require idempotency keys. Secrets stay in managed environment variables.
+Privileged customer state transitions are server-side and owner-scoped. Payment, redemption and webhook operations are idempotent. Secrets stay in managed environment variables. A dedicated cross-application audit trail is scheduled with the admin release.
 
 ## Identity and checkout authority
 
@@ -41,6 +41,14 @@ All privileged state transitions are server-side, role checked, and audit logged
 - A paid local order is an orchestration projection. The worker creates the authoritative WooCommerce order and records its WooCommerce ID.
 - WooCommerce retries search for the private Cake City reference before creating an order, reducing duplicate creation after ambiguous network failures.
 - Outbox events use row locking, five-minute processing leases, exponential retry and a dead state after eight failed attempts.
+
+## Loyalty, wallet and recurring celebrations
+
+- Reward points use an immutable ledger with a materialized balance; points settle only after the authoritative WooCommerce order reaches delivered.
+- Silver, Gold, Diamond and Platinum membership tiers derive from lifetime delivered spend and cannot be advanced by client input.
+- Point redemption atomically debits the loyalty ledger and credits the Cake City wallet. Wallet-only orders lock and debit the balance in the same transaction that creates the paid order.
+- Referral codes must be attached before a customer’s first order. Both rewards settle exactly once after the referred customer’s first delivered order.
+- Family moments are owner-scoped and recur annually. The Nairobi-time reminder worker records each year/day delivery before dispatch, preventing duplicate reminders after restarts.
 
 ## Synchronization guarantees
 

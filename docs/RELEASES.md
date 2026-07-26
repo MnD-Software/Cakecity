@@ -43,9 +43,19 @@ strict TypeScript, a production Next.js build, API tests, and deployment configu
 - Brevo transactional email and VAPID Web Push dispatch
 - Expired push-subscription cleanup and notification deep links
 
+## 0.6.0 — Rewards, wallet and recurring celebrations
+
+- Immutable points and store-credit ledgers with concurrency-safe balances
+- Silver, Gold, Diamond and Platinum membership progression from delivered spend
+- Points-to-wallet redemption with idempotency and spendable wallet checkout
+- Referral codes, pre-first-order attribution and delivery-settled two-sided rewards
+- Owner-scoped family birthday, anniversary and milestone calendar
+- Nairobi-time annual reminder automation with duplicate-delivery protection
+- Annual birthday points for the account holder’s single self moment
+- Premium Rewards and My Moments PWA account experiences
+
 ## Next releases
 
-- 0.6: loyalty, wallet, referrals, memberships and event reminders
 - 0.7: admin, CRM, marketing automation and analytics
 - 0.8: kitchen production and driver operations
 - 0.9: corporate ordering and approval workflows

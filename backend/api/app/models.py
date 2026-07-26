@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -234,6 +234,102 @@ class PushSubscription(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     __table_args__ = (Index("ix_push_customer_active", "customer_id", "revoked_at"),)
+
+
+class LoyaltyAccount(Base):
+    __tablename__ = "loyalty_accounts"
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True)
+    points_balance: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    lifetime_points: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    lifetime_spend: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0, nullable=False)
+    tier: Mapped[str] = mapped_column(String(24), default="silver", nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="active", nullable=False)
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class LoyaltyLedgerEntry(Base):
+    __tablename__ = "loyalty_ledger"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"))
+    entry_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    points: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_key: Mapped[str] = mapped_column(String(190), unique=True, nullable=False)
+    description: Mapped[str] = mapped_column(String(300), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_loyalty_ledger_customer", "customer_id", "created_at"),)
+
+
+class WalletAccount(Base):
+    __tablename__ = "wallet_accounts"
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True)
+    balance: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="KES", nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class WalletLedgerEntry(Base):
+    __tablename__ = "wallet_ledger"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"))
+    entry_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    balance_after: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    source_key: Mapped[str] = mapped_column(String(190), unique=True, nullable=False)
+    description: Mapped[str] = mapped_column(String(300), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (Index("ix_wallet_ledger_customer", "customer_id", "created_at"),)
+
+
+class ReferralCode(Base):
+    __tablename__ = "referral_codes"
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), primary_key=True)
+    code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    uses: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Referral(Base):
+    __tablename__ = "referrals"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    referrer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    referred_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), unique=True, nullable=False)
+    code: Mapped[str] = mapped_column(String(20), nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="pending", nullable=False)
+    qualifying_order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (Index("ix_referrals_referrer", "referrer_id", "state"),)
+
+
+class CelebrationMoment(Base):
+    __tablename__ = "celebration_moments"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    relationship: Mapped[str] = mapped_column(String(80), nullable=False)
+    occasion: Mapped[str] = mapped_column(String(40), nullable=False)
+    event_date: Mapped[date] = mapped_column(Date, nullable=False)
+    reminder_days: Mapped[list] = mapped_column(JSONB, default=lambda: [30, 7, 1], nullable=False)
+    notes: Mapped[str | None] = mapped_column(String(500))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (Index("ix_moments_customer", "customer_id", "is_active"),)
+
+
+class ReminderDelivery(Base):
+    __tablename__ = "reminder_deliveries"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    moment_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("celebration_moments.id", ondelete="CASCADE"), nullable=False)
+    event_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    days_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    notification_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("notifications.id", ondelete="CASCADE"), nullable=False)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint("moment_id", "event_year", "days_before", name="uq_reminder_delivery"),)
 
 
 class PaymentIntent(Base):

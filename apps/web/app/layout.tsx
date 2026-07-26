@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./styles.css";
 import "./post.css";
+import "./loyalty.css";
 import { PwaShell } from "@/components/pwa-shell";
 
 export const metadata: Metadata = {

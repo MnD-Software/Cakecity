@@ -1,14 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, Clock3, CreditCard, LoaderCircle, MapPin, PackageCheck, ShieldCheck, Smartphone, Store } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, Clock3, CreditCard, LoaderCircle, MapPin, PackageCheck, ShieldCheck, Smartphone, Store, WalletCards } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatKES } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
 
 type Fulfilment = "delivery" | "pickup";
 type Quote = { subtotal: string; delivery_fee: string; total: string; currency: string };
-type PaymentMethod = "mpesa" | "card";
+type PaymentMethod = "mpesa" | "card" | "wallet";
 type PaymentIntent = {
   id: string; order_reference: string; state: string; client_secret: string;
   action: { type: string; redirect_url?: string; message?: string };
@@ -25,7 +25,13 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mpesa");
   const [payment, setPayment] = useState<PaymentIntent | null>(null);
   const [paymentState, setPaymentState] = useState("");
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const estimated = useMemo(() => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [cart]);
+
+  useEffect(() => {
+    api<{ wallet: { balance: string } }>("/v1/account/rewards")
+      .then(result => setWalletBalance(Number(result.wallet.balance))).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     if (!payment || paymentMethod !== "mpesa" || !["created", "pending"].includes(paymentState)) return;
@@ -120,7 +126,18 @@ export default function CheckoutPage() {
           {fulfilment === "delivery" && <section className="checkout-block"><div className="block-title"><span>02</span><div><h2>Delivery details</h2><p>Where the celebration is happening.</p></div></div><label>Street / building<input name="line1" required autoComplete="street-address" /></label><div className="field-row"><label>Area<select name="area" required defaultValue=""><option value="" disabled>Select area</option><option>Kilimani</option><option>Westlands</option><option>Karen</option><option>Runda</option><option>South B</option><option>CBD</option></select></label><label>Delivery notes<input name="notes" placeholder="Gate, floor or landmark" /></label></div></section>}
           <section className="checkout-block"><div className="block-title"><span>03</span><div><h2>Choose the moment</h2><p>Freshness timed around your plans.</p></div></div><div className="date-choice"><CalendarDays /><span><b>Today, 26 July</b><small>Earliest available day</small></span><Check /></div><div className="slot-grid">{["Today · 3:30–4:00 PM","Today · 4:30–5:00 PM","Today · 5:30–6:00 PM","Tomorrow · 9:00–9:30 AM"].map(value => <button type="button" key={value} className={slot === value ? "active" : ""} onClick={() => setSlot(value)}><Clock3 />{value.replace("Today · ","").replace("Tomorrow · ","")}</button>)}</div></section>
         </section>
-        <aside className="order-summary"><p className="eyebrow">Your order</p><h2>A little joy,<br />on its way.</h2><div className="summary-items">{cart.map(item => <div key={`${item.id}-${item.size}`}><span className={`mini-cake ${item.palette}`} /><span><b>{item.name}</b><small>{item.size} · Qty {item.quantity}</small><small>{item.message || "No cake message"}</small></span><strong>{formatKES(item.unitPrice * item.quantity)}</strong></div>)}</div><div className="summary-totals"><span><small>{quote ? "Confirmed subtotal" : "Estimated subtotal"}</small><b>{formatKES(quote ? Number(quote.subtotal) : estimated)}</b></span>{quote && <span><small>Delivery</small><b>{formatKES(Number(quote.delivery_fee))}</b></span>}<span className="grand-total"><small>Total</small><b>{formatKES(quote ? Number(quote.total) : estimated)}</b></span></div>{quote && !payment ? <div className="payment-picker"><p>Pay securely with</p><button type="button" className={paymentMethod === "mpesa" ? "active" : ""} onClick={() => setPaymentMethod("mpesa")}><Smartphone /><span><b>M-Pesa</b><small>Prompt sent to your phone</small></span>{paymentMethod === "mpesa" && <Check />}</button><button type="button" className={paymentMethod === "card" ? "active" : ""} onClick={() => setPaymentMethod("card")}><CreditCard /><span><b>Card</b><small>Visa, Mastercard and Amex</small></span>{paymentMethod === "card" && <Check />}</button><button type="button" className="button primary full" onClick={initiatePayment}>Pay {formatKES(Number(quote.total))} <ArrowRight /></button></div> : !quote ? <button className="button primary full">Review availability <ArrowRight /></button> : null}{payment && <PaymentProgress state={paymentState} reference={payment.order_reference} message={payment.action.message} />}{status && <p className="checkout-status" role="status">{status}</p>}<p className="summary-safe"><PackageCheck /> Stock is released only after verified payment.</p></aside>
+        <aside className="order-summary">
+          <p className="eyebrow">Your order</p><h2>A little joy,<br />on its way.</h2>
+          <div className="summary-items">{cart.map(item => <div key={`${item.id}-${item.size}`}><span className={`mini-cake ${item.palette}`} /><span><b>{item.name}</b><small>{item.size} · Qty {item.quantity}</small><small>{item.message || "No cake message"}</small></span><strong>{formatKES(item.unitPrice * item.quantity)}</strong></div>)}</div>
+          <div className="summary-totals"><span><small>{quote ? "Confirmed subtotal" : "Estimated subtotal"}</small><b>{formatKES(quote ? Number(quote.subtotal) : estimated)}</b></span>{quote && <span><small>Delivery</small><b>{formatKES(Number(quote.delivery_fee))}</b></span>}<span className="grand-total"><small>Total</small><b>{formatKES(quote ? Number(quote.total) : estimated)}</b></span></div>
+          {quote && !payment ? <div className="payment-picker"><p>Pay securely with</p>
+            <button type="button" className={paymentMethod === "mpesa" ? "active" : ""} onClick={() => setPaymentMethod("mpesa")}><Smartphone /><span><b>M-Pesa</b><small>Prompt sent to your phone</small></span>{paymentMethod === "mpesa" && <Check />}</button>
+            <button type="button" className={paymentMethod === "card" ? "active" : ""} onClick={() => setPaymentMethod("card")}><CreditCard /><span><b>Card</b><small>Visa, Mastercard and Amex</small></span>{paymentMethod === "card" && <Check />}</button>
+            {walletBalance !== null && <button type="button" disabled={walletBalance < Number(quote.total)} className={paymentMethod === "wallet" ? "active" : ""} onClick={() => setPaymentMethod("wallet")}><WalletCards /><span><b>Cake City credit</b><small>{formatKES(walletBalance)} available{walletBalance < Number(quote.total) ? " · balance too low" : ""}</small></span>{paymentMethod === "wallet" && <Check />}</button>}
+            <button type="button" className="button primary full" onClick={initiatePayment}>Pay {formatKES(Number(quote.total))} <ArrowRight /></button>
+          </div> : !quote ? <button className="button primary full">Review availability <ArrowRight /></button> : null}
+          {payment && <PaymentProgress state={paymentState} reference={payment.order_reference} message={payment.action.message} />}{status && <p className="checkout-status" role="status">{status}</p>}<p className="summary-safe"><PackageCheck /> Stock is released only after verified payment.</p>
+        </aside>
       </form>
     </main>
   );

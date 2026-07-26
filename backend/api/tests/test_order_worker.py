@@ -22,3 +22,15 @@ def test_paid_order_payload_preserves_authority_reference_and_configuration():
     assert payload["transaction_id"] == "SAMPLE123"
     assert payload["line_items"][0]["product_id"] == 901
     assert {"key": "_cakecity_reference", "value": "CC-ABC123"} in payload["meta_data"]
+
+
+def test_wallet_orders_are_identified_in_woocommerce():
+    order = SimpleNamespace(
+        reference="CC-WALLET", customer_name="Amani", customer_email="a@example.com",
+        customer_phone="0712345678", delivery_address={}, delivery_fee=Decimal("0"),
+        fulfilment="pickup", delivery_slot=None,
+    )
+    line = SimpleNamespace(woo_product_id=1, quantity=1, line_total=Decimal("3200"), configuration={})
+    intent = SimpleNamespace(method="wallet", provider_reference="WALLET-CC-WALLET", provider_payload={})
+    payload = build_woo_order_payload(order, [line], intent)
+    assert payload["payment_method_title"] == "Cake City Wallet"

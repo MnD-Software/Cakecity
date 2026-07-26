@@ -9,6 +9,9 @@ from .services.flutterwave import FlutterwaveClient, verified_flutterwave_paymen
 from .services.order_tracking import append_stage, stage_from_woo, woo_meta
 from .services.synchronizer import upsert_product
 from .services.notifications import dispatch_notification
+from .services.loyalty import settle_order_rewards
+from .services.reminders import process_due_reminders
+from zoneinfo import ZoneInfo
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
 
@@ -97,7 +100,7 @@ def build_woo_order_payload(order: Order, lines: list[OrderLine], intent: Paymen
     return {
         "status": "processing", "set_paid": True,
         "payment_method": intent.method,
-        "payment_method_title": "M-Pesa" if intent.method == "mpesa" else "Card",
+        "payment_method_title": {"mpesa": "M-Pesa", "card": "Card", "wallet": "Cake City Wallet"}[intent.method],
         "transaction_id": transaction_id,
         "billing": {
             "first_name": order.customer_name, "email": order.customer_email,
@@ -171,10 +174,12 @@ async def process_woo_webhook(event: WebhookEvent) -> None:
                 stage = stage_from_woo(attached.payload)
                 if order and stage:
                     order.woo_id = order.woo_id or int(attached.payload["id"])
-                    await append_stage(
+                    appended = await append_stage(
                         db, order, stage, f"woo-webhook:{attached.delivery_key}",
                         "woocommerce", metadata={"woo_status": attached.payload.get("status")},
                     )
+                    if appended and stage == "delivered":
+                        await settle_order_rewards(db, order)
             attached.state = "processed"
             attached.processed_at = datetime.now(timezone.utc)
             attached.error = None
@@ -207,7 +212,14 @@ async def process(event: OutboxEvent) -> None:
 
 
 async def run() -> None:
+    last_reminder_date = None
     while True:
+        today = datetime.now(ZoneInfo("Africa/Nairobi")).date()
+        if today != last_reminder_date:
+            async with SessionFactory() as db:
+                await process_due_reminders(db, today)
+                await db.commit()
+            last_reminder_date = today
         async with SessionFactory() as db:
             event = await claim_event(db)
             webhook = None if event else await claim_webhook(db)

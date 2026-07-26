@@ -13,7 +13,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth import optional_customer
 from ..database import session
-from ..models import Customer, Order, OrderLine, OutboxEvent, PaymentEvent, PaymentIntent
+from ..models import Customer, Order, OrderLine, OutboxEvent, PaymentEvent, PaymentIntent, WalletLedgerEntry
+from ..services.loyalty import wallet_account
 from ..settings import settings
 from ..services.flutterwave import FlutterwaveClient, verify_flutterwave_signature
 from ..services.mpesa import MpesaClient, normalize_kenyan_phone, parse_stk_callback
@@ -36,7 +37,7 @@ class DeliveryAddress(BaseModel):
 
 
 class PaymentIntentInput(BaseModel):
-    method: Literal["mpesa", "card"]
+    method: Literal["mpesa", "card", "wallet"]
     checkout: CheckoutQuoteInput
     customer: PaymentCustomer
     delivery_address: DeliveryAddress | None = None
@@ -109,6 +110,8 @@ async def create_payment_intent(
         settings.flutterwave_secret_key, settings.flutterwave_webhook_secret,
     )):
         raise HTTPException(status_code=503, detail="Card payments are not configured")
+    if payload.method == "wallet" and not customer:
+        raise HTTPException(status_code=401, detail="Sign in to pay with Cake City credit")
     if payload.checkout.fulfilment == "delivery" and not payload.delivery_address:
         raise HTTPException(status_code=422, detail="Delivery address is required")
 
@@ -139,10 +142,32 @@ async def create_payment_intent(
     intent = PaymentIntent(
         order_id=order.id, idempotency_key=idempotency_key,
         client_secret_hash=hashlib.sha256(secret.encode()).hexdigest(),
-        method=payload.method, provider="safaricom" if payload.method == "mpesa" else "flutterwave",
+        method=payload.method, provider={"mpesa": "safaricom", "card": "flutterwave", "wallet": "cakecity"}[payload.method],
         amount=quote.total, currency=quote.currency,
     )
     db.add(intent)
+    if payload.method == "wallet":
+        await db.flush()
+        wallet = await wallet_account(db, customer.id, lock=True)
+        if wallet.balance < quote.total:
+            await db.rollback()
+            raise HTTPException(status_code=409, detail="Your Cake City wallet balance is not enough for this order")
+        wallet.balance -= quote.total
+        intent.state = "paid"
+        intent.paid_at = datetime.now(timezone.utc)
+        intent.provider_reference = f"WALLET-{order.reference}"
+        order.state = "paid"
+        db.add(WalletLedgerEntry(
+            customer_id=customer.id, order_id=order.id, entry_type="order_payment",
+            amount=-quote.total, balance_after=wallet.balance, source_key=f"order:{order.id}",
+            description=f"Payment for {order.reference}",
+        ))
+        db.add(OutboxEvent(
+            aggregate_type="order", aggregate_id=order.id, topic="order.payment_confirmed",
+            payload={"order_id": str(order.id), "payment_intent_id": str(intent.id)},
+        ))
+        await db.commit()
+        return await response_for(intent, order)
     await db.commit()
 
     try:
