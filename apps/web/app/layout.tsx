@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export const viewport: Viewport = { themeColor: "#72153b", colorScheme: "light" };
+export const viewport: Viewport = { themeColor: "#e4007c", colorScheme: "light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en-KE"><body>{children}<PwaShell /></body></html>;

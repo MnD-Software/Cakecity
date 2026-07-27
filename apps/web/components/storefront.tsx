@@ -1,7 +1,7 @@
 "use client";
 
-import { lazy, Suspense, useState } from "react";
-import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Bell, Check, ChevronRight, Gift, Heart, Home, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, WandSparkles, X, Zap } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
 import { useSavedCakes } from "@/lib/use-saved-cakes";
@@ -22,10 +22,21 @@ export function Storefront() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [conciergeOpen, setConciergeOpen] = useState(false);
+  const [offerIndex, setOfferIndex] = useState(0);
   const hasDiscoveryApi = process.env.NODE_ENV !== "production" || Boolean(process.env.NEXT_PUBLIC_API_URL);
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const offers = [
+    { kicker: "Cake of the month", title: "Butterscotch 1.5kg offer", copy: "A Cake City favourite sized for the whole table.", price: "KES 3,500", tone: "butterscotch" },
+    { kicker: "Limited drop", title: "Midnight Fantasy 1.5kg", copy: "Deep chocolate, glossy ganache and a celebratory finish.", price: "KES 3,500", tone: "midnight" },
+    { kicker: "Party ready", title: "Pink Simba birthday set", copy: "Cake, colour and school-party energy in one easy order.", price: "KES 12,000", tone: "simba" },
+  ];
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setOfferIndex(current => (current + 1) % offers.length), 6500);
+    return () => window.clearInterval(timer);
+  }, [offers.length]);
 
   const addConfigured = (product: Product, configuration: { size: CartItem["size"]; message: string }) => {
     add(product, configuration);
@@ -74,6 +85,26 @@ export function Storefront() {
         <span><Check /> Baked fresh daily</span><span><Check /> Delivered in a 30-min window</span><span><Check /> Happiness guaranteed</span><span><Check /> Secure M-Pesa checkout</span>
       </section>
 
+      <section className="offer-carousel" aria-roledescription="carousel" aria-label="Cake City offers">
+        <div className={`offer-visual ${offers[offerIndex].tone}`} aria-hidden="true">
+          <span className="offer-orbit orbit-one" /><span className="offer-orbit orbit-two" />
+          <span className="cake offer-cake"><i /><b /><i /></span>
+          <span className="offer-badge">1.5KG</span>
+        </div>
+        <div className="offer-copy" aria-live="polite">
+          <p className="eyebrow">{offers[offerIndex].kicker}</p>
+          <span className="offer-count">0{offerIndex + 1} / 0{offers.length}</span>
+          <h2>{offers[offerIndex].title}</h2>
+          <p>{offers[offerIndex].copy}</p>
+          <div className="offer-action-row"><strong>{offers[offerIndex].price}</strong><a className="button primary" href="#shop">Shop this offer <ArrowRight /></a></div>
+          <div className="offer-controls">
+            <button onClick={() => setOfferIndex(current => (current - 1 + offers.length) % offers.length)} aria-label="Previous offer"><ArrowLeft /></button>
+            <div>{offers.map((offer, index) => <button key={offer.title} className={index === offerIndex ? "active" : ""} onClick={() => setOfferIndex(index)} aria-label={`Show ${offer.title}`} aria-current={index === offerIndex ? "true" : undefined} />)}</div>
+            <button onClick={() => setOfferIndex(current => (current + 1) % offers.length)} aria-label="Next offer"><ArrowRight /></button>
+          </div>
+        </div>
+      </section>
+
       <section className="section" id="shop">
         <div className="section-heading">
           <div><p className="eyebrow">Curated for you</p><h2>The cakes everyone<br />is talking about.</h2></div>
@@ -100,6 +131,16 @@ export function Storefront() {
 
       {hasDiscoveryApi && <Suspense fallback={null}><PersonalizedRail /></Suspense>}
 
+      <section className="smart-studio section" id="smart-studio">
+        <div className="smart-heading"><p className="eyebrow">Celebration OS</p><h2>Your moment,<br /><em>beautifully orchestrated.</em></h2><p>A faster, app-like way to plan, personalise and follow every celebration.</p></div>
+        <div className="smart-grid">
+          <button className="smart-card featured" onClick={() => setConciergeOpen(true)}><span className="smart-icon"><WandSparkles /></span><small>AI cake concierge</small><b>Describe the moment.<br />Meet your perfect cake.</b><span>Start a recommendation <ArrowRight /></span></button>
+          <a className="smart-card" href="/account/moments"><span className="smart-icon"><Bell /></span><small>Moment memory</small><b>Never miss a birthday again.</b><span>Save a celebration <ArrowRight /></span></a>
+          <a className="smart-card dark" href="/account/orders"><span className="delivery-pulse"><i /></span><small>Live delivery</small><b>Kitchen to doorstep, tracked.</b><span>Track an order <ArrowRight /></span></a>
+          <a className="smart-card" href="/account/rewards"><span className="smart-icon"><Zap /></span><small>City rewards</small><b>Turn every celebration into your next.</b><span>See your rewards <ArrowRight /></span></a>
+        </div>
+      </section>
+
       <section className="occasion" id="moments">
         <div className="occasion-copy"><p className="eyebrow light">Find your perfect cake</p><h2>What are we<br /><em>celebrating?</em></h2><p>Tell us the moment. We’ll help with the magic.</p></div>
         <div className="occasion-grid">
@@ -113,6 +154,14 @@ export function Storefront() {
       </section>
 
       <footer><a className="brand inverse" href="#"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
+
+      <nav className="mobile-tabbar" aria-label="Mobile app navigation">
+        <a className="active" href="#"><Home /><span>Home</span></a>
+        <a href="#shop"><Search /><span>Explore</span></a>
+        <button className="tabbar-order" onClick={() => setCartOpen(true)}><ShoppingBag /><i>{count}</i><span>Bag</span></button>
+        <a href="/account/moments"><Gift /><span>Moments</span></a>
+        <a href="/account"><UserRound /><span>Account</span></a>
+      </nav>
 
       {searchOpen && <Suspense fallback={null}><NaturalSearchPanel close={() => setSearchOpen(false)} /></Suspense>}
       {conciergeOpen && <Suspense fallback={null}><ConciergePanel close={() => setConciergeOpen(false)} /></Suspense>}
