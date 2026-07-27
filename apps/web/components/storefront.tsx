@@ -14,6 +14,7 @@ const ConciergePanel = lazy(() =>
 const PersonalizedRail = lazy(() =>
   import("@/components/personalized-rail").then(module => ({ default: module.PersonalizedRail })),
 );
+const CAKE_CITY_LOGO = "https://i0.wp.com/cakecity.co.ke/wp-content/uploads/2024/08/Untitled-design-17.png";
 
 export function Storefront({ initialProducts }: { initialProducts?: Product[] }) {
   const products = initialProducts?.length ? initialProducts : previewProducts;
@@ -31,8 +32,15 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const categories = ["All cakes", ...Array.from(new Set(products.map(product => product.category).filter((category): category is string => Boolean(category)))).slice(0, 7)];
-  const visibleProducts = activeCategory === "All cakes" ? products : products.filter(product => product.category === activeCategory);
+  const categoryPriority = ["Cakes of the Month", "Chocolate Sponge Base", "Vanilla Sponge Base", "Custom Cakes", "Cheese Cakes", "Pound Cakes", "Cupcakes", "Cookies", "Cake Slices", "Tea Cakes"];
+  const liveCategories = Array.from(new Set(products.map(product => product.category).filter((category): category is string => Boolean(category))));
+  const categories = ["All cakes", ...liveCategories.sort((a, b) => {
+    const ai = categoryPriority.indexOf(a);
+    const bi = categoryPriority.indexOf(b);
+    if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    return a.localeCompare(b);
+  }).slice(0, 10)];
+  const visibleProducts = activeCategory === "All cakes" ? products.slice(0, 12) : products.filter(product => product.category === activeCategory);
   const offers = [
     { kicker: "Cake of the month", title: "Butterscotch", price: "From KES 3,000", image: "/images/offer-butterscotch.avif" },
     { kicker: "A chocolate classic", title: "Midnight Fantasy", price: "From KES 2,600", image: "/images/offer-midnight.avif" },
@@ -63,7 +71,7 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
 
       <header className="header">
         <button className="icon-button mobile-menu" onClick={() => setMobileNavOpen(open => !open)} aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? "Close menu" : "Open menu"}>{mobileNavOpen ? <X /> : <Menu />}</button>
-        <a className="brand" href="/" aria-label="Cake City home"><img src="/icons/cake-city-icon.svg" alt="" /><span><b>CAKE</b><b>CITY</b></span></a>
+        <a className="brand" href="/" aria-label="Cake City home"><img src={CAKE_CITY_LOGO} alt="Cake City" /></a>
         <nav className={mobileNavOpen ? "open" : ""} aria-label="Primary navigation">
           <a onClick={() => setMobileNavOpen(false)} href="#shop">Cakes</a><a onClick={() => setMobileNavOpen(false)} href="#moments">Occasions</a><a onClick={() => setMobileNavOpen(false)} href="#concierge">Custom & gifting</a><a onClick={() => setMobileNavOpen(false)} href="/account/rewards">Rewards</a>
         </nav>
@@ -149,7 +157,7 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
               <button className={`heart ${isSaved(product.id) ? "selected" : ""}`} onClick={() => toggleSaved(product.id)} aria-pressed={isSaved(product.id)} aria-label={`Save ${product.name}`}><Heart fill="currentColor" /></button>
               {product.tag && <span className="product-tag">{product.tag}</span>}
               <button className={`cake-visual ${product.palette}`} onClick={() => setActiveProduct(product)} aria-label={`View ${product.name}`}>
-                {product.imageUrl ? <img className="product-photo" src={product.imageUrl} alt="" /> : <span className="cake"><i /><b /><i /></span>}
+                {product.imageUrl ? <img className="product-photo" src={product.imageUrl} alt={product.name} loading={index < 3 ? "eager" : "lazy"} decoding="async" /> : <span className="cake"><i /><b /><i /></span>}
               </button>
               <div className="product-info">
                 <div className="product-kicker-row"><span>{product.category || product.note}</span>{product.rating > 0 && <span className="rating"><Star size={13} fill="currentColor" /> {product.rating.toFixed(1)}</span>}</div>
@@ -186,7 +194,7 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
         <button className="button primary" onClick={() => setConciergeOpen(true)}>Help me choose <Sparkles /></button>
       </section>
 
-      <footer><a className="brand inverse" href="/"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
+      <footer><a className="brand inverse" href="/"><img src={CAKE_CITY_LOGO} alt="Cake City" /></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
 
       <nav className="mobile-tabbar" aria-label="Mobile app navigation">
         <a className="active" href="/"><Home /><span>Home</span></a>

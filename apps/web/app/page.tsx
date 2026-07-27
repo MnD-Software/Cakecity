@@ -10,7 +10,7 @@ export default async function Home() {
         "@type": "Bakery", "@id": "https://cakecity.co.ke/#business",
         name: "Cake City", url: "https://cakecity.co.ke",
         image: "https://cakecity.co.ke/images/cake-city-hero.webp",
-        logo: "https://cakecity.co.ke/icons/icon-512.png",
+        logo: "https://i0.wp.com/cakecity.co.ke/wp-content/uploads/2024/08/Untitled-design-17.png",
         priceRange: "KES", currenciesAccepted: "KES", paymentAccepted: "M-Pesa, Card",
         areaServed: { "@type": "City", name: "Nairobi" },
         address: { "@type": "PostalAddress", addressLocality: "Nairobi", addressCountry: "KE" },

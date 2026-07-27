@@ -38,6 +38,8 @@ test("PWA has install, offline, update and maskable icon contracts", () => {
   const manifest = readFileSync(new URL("../app/manifest.ts", import.meta.url), "utf8");
   const worker = readFileSync(new URL("../public/sw.js", import.meta.url), "utf8");
   assert.match(shell, /beforeinstallprompt/);
+  assert.match(shell, /Add to Home Screen/);
+  assert.match(shell, /display-mode: standalone/);
   assert.match(shell, /serviceWorker\.register/);
   assert.match(manifest, /purpose: "maskable"/);
   assert.match(worker, /caches\.match\("\/offline"\)/);

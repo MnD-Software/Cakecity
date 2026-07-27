@@ -29,7 +29,7 @@ const clean = (value: string) => value
   .replace(/\s+/g, " ")
   .trim();
 
-export async function liveStorefrontProducts(limit = 12): Promise<Product[]> {
+export async function liveStorefrontProducts(limit = 48): Promise<Product[]> {
   try {
     const response = await fetch(`${STORE_API}/products?per_page=${limit}`, { next: { revalidate: 300 } });
     if (!response.ok) return [];
