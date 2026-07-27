@@ -1,6 +1,8 @@
+import json
 from functools import lru_cache
+from typing import Annotated
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -43,8 +45,8 @@ class Settings(BaseSettings):
     max_request_bytes: int = 2_000_000
     database_pool_size: int = 10
     database_max_overflow: int = 20
-    allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
-    allowed_origins: list[str] = [
+    allowed_hosts: Annotated[list[str], NoDecode] = ["localhost", "127.0.0.1", "testserver"]
+    allowed_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:3002",
@@ -64,6 +66,21 @@ class Settings(BaseSettings):
         if value not in {"lax", "strict", "none"}:
             raise ValueError("COOKIE_SAMESITE must be lax, strict or none")
         return value
+
+    @field_validator("allowed_hosts", "allowed_origins", mode="before")
+    @classmethod
+    def parse_list_setting(cls, value):
+        if not isinstance(value, str):
+            return value
+        value = value.strip()
+        if not value:
+            return []
+        if value.startswith("["):
+            parsed = json.loads(value)
+            if not isinstance(parsed, list):
+                raise ValueError("must be a JSON array or comma-separated list")
+            return parsed
+        return [item.strip() for item in value.split(",") if item.strip()]
 
     def validate_production_secrets(self) -> None:
         if self.environment != "production":

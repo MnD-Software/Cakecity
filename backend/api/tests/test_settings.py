@@ -27,3 +27,14 @@ def test_production_accepts_complete_managed_boundary():
         allowed_origins=["https://app.cakecity.co.ke"],
     )
     settings.validate_production_secrets()
+
+
+def test_render_accepts_json_or_plain_origin_lists(monkeypatch):
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://one.vercel.app, https://two.vercel.app")
+    monkeypatch.setenv("ALLOWED_HOSTS", '["cakecity-api.onrender.com"]')
+    settings = Settings(_env_file=None)
+    assert settings.allowed_origins == [
+        "https://one.vercel.app",
+        "https://two.vercel.app",
+    ]
+    assert settings.allowed_hosts == ["cakecity-api.onrender.com"]
