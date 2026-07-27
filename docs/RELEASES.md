@@ -3,6 +3,12 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.5.4 — Deterministic Android dependency boundary
+
+- Pins `path_provider_android` to the last pre-JNI implementation after resolving the annotated
+  Gradle incompatibility introduced by the transitive 2.3.x line.
+- Retains separate Android and Flutter Web builders and full failure annotations.
+
 ## 1.5.3 — Android build diagnostics
 
 - Preserves Android failure status while publishing the final Gradle output as check annotations.
