@@ -6,6 +6,7 @@ COPY backend/api/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/api/app ./app
 COPY backend/api/migrate.py ./migrate.py
+COPY backend/api/start_free.py ./start_free.py
 COPY database/migrations ./migrations
 USER cakecity
 EXPOSE 8000

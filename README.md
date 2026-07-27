@@ -69,6 +69,8 @@ The installed experience launches in its own window and includes an offline fall
 - Render: create a Blueprint from the root `render.yaml`, then provide the WooCommerce webhook secret.
 - Both services deploy only after the repository verification checks pass.
 - Follow the production sequence and rollback checklist in `docs/DEPLOYMENT.md`.
+- Free Render accounts using Neon should follow `docs/RENDER_FREE_NEON.md` instead; this runs the
+  API and worker together on one free web instance.
 
 ## Run supporting services
 
