@@ -3,6 +3,11 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.2.3 — Lean storefront hydration
+
+- Removes the superseded client-side catalogue search implementation from the homepage bundle.
+- Keeps the natural-language discovery experience as the single search implementation.
+
 ## 1.2.2 — Deferred discovery hydration
 
 - Uses React lazy boundaries so discovery modules execute only when their customer surface opens.

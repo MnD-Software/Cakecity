@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
@@ -119,12 +119,6 @@ export function Storefront() {
       <CartPanel open={cartOpen} close={() => setCartOpen(false)} cart={cart} subtotal={subtotal} update={updateQuantity} />
     </main>
   );
-}
-
-function SearchPanel({ close }: { close: () => void }) {
-  const [query, setQuery] = useState("");
-  const matches = useMemo(() => products.filter(p => `${p.name} ${p.note}`.toLowerCase().includes(query.toLowerCase())), [query]);
-  return <div className="overlay search-overlay" role="dialog" aria-modal="true" aria-label="Search cakes"><button className="close" onClick={close}><X /></button><div className="search-panel"><p className="eyebrow">What can we help you celebrate?</p><label><Search /><input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Try “chocolate cake for a birthday”" /></label><div className="search-results">{query && matches.map(p => <button key={p.id}><span className={`mini-cake ${p.palette}`} /><span><b>{p.name}</b><small>{p.note}</small></span><span>{formatKES(p.price)}</span></button>)}</div></div></div>;
 }
 
 function ProductPanel({ product, close, add }: { product: Product; close: () => void; add: (configuration: { size: CartItem["size"]; message: string }) => void }) {
