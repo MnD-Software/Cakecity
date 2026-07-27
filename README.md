@@ -50,8 +50,8 @@ flutter pub get
 flutter run --dart-define=API_URL=http://127.0.0.1:8000
 ```
 
-Every push to `main` analyzes/tests the app and publishes a release APK plus Flutter Web bundle as
-the versioned `cakecity-driver` Actions artifact, configured for the Render API service.
+Every push to `main` analyzes/tests the app and publishes independently verified
+`cakecity-driver-android` and `cakecity-driver-web` Actions artifacts, configured for the Render API.
 
 ## Install the PWA representation
 
