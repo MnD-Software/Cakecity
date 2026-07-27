@@ -33,9 +33,11 @@ jobs:
       - name: Enforce Lighthouse budgets
         run: |
           mkdir -p .lighthouseci/reports
-          pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/ --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=.lighthouseci/reports/home.json --quiet
-          pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/corporate --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=.lighthouseci/reports/corporate.json --quiet
-          node scripts/assert_lighthouse.mjs .lighthouseci/reports/home.json .lighthouseci/reports/corporate.json
+          for sample in 1 2 3; do
+            pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/ --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=".lighthouseci/reports/home-$sample.json" --quiet
+            pnpm dlx lighthouse@13.4.1 http://127.0.0.1:3098/corporate --preset=desktop --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" --output=json --output-path=".lighthouseci/reports/corporate-$sample.json" --quiet
+          done
+          node scripts/assert_lighthouse.mjs .lighthouseci/reports/*.json
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -135,7 +137,7 @@ jobs:
       - run: flutter build apk --release --dart-define=API_URL=https://cakecity-api.onrender.com
       - uses: actions/upload-artifact@v7
         with:
-          name: cakecity-driver-v1.2.3
+          name: cakecity-driver-v1.2.4
           path: |
             apps/driver/build/app/outputs/flutter-apk/app-release.apk
             apps/driver/build/web

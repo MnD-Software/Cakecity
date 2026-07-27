@@ -3,6 +3,11 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.2.4 — Repeatable performance evidence
+
+- Enforces unchanged Lighthouse budgets against the median of three independent samples per route.
+- Preserves every raw homepage and corporate report as release evidence with sample-level diagnostics.
+
 ## 1.2.3 — Lean storefront hydration
 
 - Removes the superseded client-side catalogue search implementation from the homepage bundle.
