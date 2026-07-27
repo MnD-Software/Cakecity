@@ -78,6 +78,16 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
         </div>
       </header>
 
+      <section className="mobile-home-intro" aria-label="Cake City mobile home">
+        <div className="mobile-delivery-row">
+          <button onClick={() => setConciergeOpen(true)}><MapPin /><span><small>Delivering to</small><b>Karen, Nairobi <ChevronRight /></b></span></button>
+          <div><a href="/account/notifications" aria-label="Notifications"><Bell /></a><button onClick={() => setCartOpen(true)} aria-label={`Bag with ${count} items`}><ShoppingBag /><i>{count}</i></button></div>
+        </div>
+        <h1>Good morning, <em>Marcos</em> 👋</h1>
+        <p>What sweet moment are we celebrating today?</p>
+        <button className="mobile-magic-search" onClick={() => setSearchOpen(true)}><Search /><span>Search cakes, occasions…</span><i><Sparkles /></i></button>
+      </section>
+
       <section className="photo-carousel hero-carousel" aria-roledescription="carousel" aria-label="Featured Cake City cakes">
         <div className="photo-carousel-track" ref={offerTrackRef} onScroll={event => setOfferIndex(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
           {offers.map((offer, index) => <article className="photo-slide" key={offer.title} aria-hidden={index !== offerIndex}>
@@ -99,6 +109,14 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
           <button onClick={() => setConciergeOpen(true)}><Users /><span><small>Guests</small><b>How many are sharing?</b></span></button>
           <button className="plan-search" onClick={() => setConciergeOpen(true)} aria-label="Find cakes"><Search /></button>
         </div>
+      </section>
+
+      <section className="mobile-upcoming">
+        <div className="mobile-section-title"><b>Upcoming occasion</b><a href="/account/moments">See all</a></div>
+        <a href="/account/moments" className="mobile-moment-card">
+          <span><small>Emily’s birthday</small><b>12 days to go</b><i>Reorder last cake</i></span>
+          <span className="mobile-moment-cake">🎂</span>
+        </a>
       </section>
 
       <section className="hero">
