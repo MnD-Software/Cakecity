@@ -7,6 +7,7 @@ export type Product = {
   tag?: string;
   palette: string;
   imageUrl?: string;
+  category?: string;
 };
 
 export type CartItem = Product & {

@@ -24,11 +24,15 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
   const [searchOpen, setSearchOpen] = useState(false);
   const [conciergeOpen, setConciergeOpen] = useState(false);
   const [offerIndex, setOfferIndex] = useState(0);
+  const [activeCategory, setActiveCategory] = useState("All cakes");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const offerTrackRef = useRef<HTMLDivElement>(null);
   const hasDiscoveryApi = process.env.NODE_ENV !== "production" || Boolean(process.env.NEXT_PUBLIC_API_URL);
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const categories = ["All cakes", ...Array.from(new Set(products.map(product => product.category).filter((category): category is string => Boolean(category)))).slice(0, 7)];
+  const visibleProducts = activeCategory === "All cakes" ? products : products.filter(product => product.category === activeCategory);
   const offers = [
     { kicker: "Cake of the month", title: "Butterscotch", price: "From KES 3,000", image: "/images/offer-butterscotch.avif" },
     { kicker: "A chocolate classic", title: "Midnight Fantasy", price: "From KES 2,600", image: "/images/offer-midnight.avif" },
@@ -54,14 +58,14 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
     <main>
       <div className="announcement">
         <span>Complimentary delivery in Nairobi on orders over KES 5,000</span>
-        <button>Discover Cake City Rewards <ArrowRight size={14} /></button>
+        <a href="/account/rewards">Discover Cake City Rewards <ArrowRight size={14} /></a>
       </div>
 
       <header className="header">
-        <button className="icon-button mobile-menu" aria-label="Open menu"><Menu /></button>
-        <a className="brand" href="#" aria-label="Cake City home"><span>CAKE</span><span>CITY</span></a>
-        <nav aria-label="Primary navigation">
-          <a href="#shop">Cakes</a><a href="#moments">Occasions</a><a href="#gifting">Gifting</a><a href="#rewards">Rewards</a>
+        <button className="icon-button mobile-menu" onClick={() => setMobileNavOpen(open => !open)} aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? "Close menu" : "Open menu"}>{mobileNavOpen ? <X /> : <Menu />}</button>
+        <a className="brand" href="/" aria-label="Cake City home"><span>CAKE</span><span>CITY</span></a>
+        <nav className={mobileNavOpen ? "open" : ""} aria-label="Primary navigation">
+          <a onClick={() => setMobileNavOpen(false)} href="#shop">Cakes</a><a onClick={() => setMobileNavOpen(false)} href="#moments">Occasions</a><a onClick={() => setMobileNavOpen(false)} href="#concierge">Custom & gifting</a><a onClick={() => setMobileNavOpen(false)} href="/account/rewards">Rewards</a>
         </nav>
         <div className="header-actions">
           <button className="location"><MapPin size={17} /> Nairobi <ChevronRight size={14} /></button>
@@ -117,13 +121,13 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
       <section className="section" id="shop">
         <div className="section-heading">
           <div><p className="eyebrow">Customer favourites</p><h2>The cakes Nairobi<br />keeps coming back for.</h2></div>
-          <a className="text-link" href="#all">Explore all cakes <ArrowRight /></a>
+          <a className="text-link" href="#shop" onClick={() => setActiveCategory("All cakes")}>Explore all cakes <ArrowRight /></a>
         </div>
         <nav className="cake-categories" aria-label="Cake categories">
-          {["All cakes", "Chocolate", "Vanilla", "Cheesecakes", "Cupcakes", "Wedding", "Custom cakes"].map((category, index) => <button className={index === 0 ? "active" : ""} key={category}>{category}</button>)}
+          {categories.map(category => <button className={activeCategory === category ? "active" : ""} onClick={() => setActiveCategory(category)} key={category}>{category}</button>)}
         </nav>
         <div className="product-grid">
-          {products.map((product, index) => (
+          {visibleProducts.map((product, index) => (
             <article className="product-card" key={product.id} style={{ animationDelay: `${index * 80}ms` }}>
               <button className={`heart ${isSaved(product.id) ? "selected" : ""}`} onClick={() => toggleSaved(product.id)} aria-pressed={isSaved(product.id)} aria-label={`Save ${product.name}`}><Heart fill="currentColor" /></button>
               {product.tag && <span className="product-tag">{product.tag}</span>}
@@ -131,10 +135,10 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
                 {product.imageUrl ? <img className="product-photo" src={product.imageUrl} alt="" /> : <span className="cake"><i /><b /><i /></span>}
               </button>
               <div className="product-info">
-                <div><h3>{product.name}</h3><p>{product.note}</p></div><span className="rating"><Star size={13} fill="currentColor" /> {product.rating}</span>
-                <strong>From {formatKES(product.price)}</strong>
-                <a className="product-details-link" href={`/cakes/${product.id}`}>View cake details <ArrowRight /></a>
-                <button className="quick-add" onClick={() => setActiveProduct(product)}>Personalise <Plus /></button>
+                <div className="product-kicker-row"><span>{product.category || product.note}</span>{product.rating > 0 && <span className="rating"><Star size={13} fill="currentColor" /> {product.rating.toFixed(1)}</span>}</div>
+                <h3>{product.name}</h3>
+                <div className="product-price">From <strong>{formatKES(product.price)}</strong></div>
+                <div className="product-actions"><a className="product-details-link" href={`/cakes/${product.id}`}>View cake <ArrowRight /></a><button className="quick-add" onClick={() => setActiveProduct(product)}>Personalise <Plus /></button></div>
               </div>
             </article>
           ))}
@@ -156,7 +160,7 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
       <section className="occasion" id="moments">
         <div className="occasion-copy"><p className="eyebrow light">Find your perfect cake</p><h2>What are we<br /><em>celebrating?</em></h2><p>Tell us the moment. We’ll help with the magic.</p></div>
         <div className="occasion-grid">
-          {["Birthday", "Wedding", "Just because", "Corporate"].map((name, i) => <button key={name} className={`occasion-card oc-${i}`}><span>0{i + 1}</span><b>{name}</b><ArrowRight /></button>)}
+          {["Birthday", "Wedding", "Just because", "Corporate"].map((name, i) => <button key={name} onClick={() => setConciergeOpen(true)} className={`occasion-card oc-${i}`}><span>0{i + 1}</span><b>{name}</b><ArrowRight /></button>)}
         </div>
       </section>
 
@@ -165,10 +169,10 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
         <button className="button primary" onClick={() => setConciergeOpen(true)}>Help me choose <Sparkles /></button>
       </section>
 
-      <footer><a className="brand inverse" href="#"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
+      <footer><a className="brand inverse" href="/"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
 
       <nav className="mobile-tabbar" aria-label="Mobile app navigation">
-        <a className="active" href="#"><Home /><span>Home</span></a>
+        <a className="active" href="/"><Home /><span>Home</span></a>
         <a href="#shop"><Search /><span>Explore</span></a>
         <button className="tabbar-order" onClick={() => setCartOpen(true)}><ShoppingBag /><i>{count}</i><span>Bag</span></button>
         <a href="/account/moments"><Gift /><span>Moments</span></a>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductExperience, type ProductDetail } from "@/components/product-experience";
+import { liveProductDetail } from "@/lib/server-catalog";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 const developmentPreview: ProductDetail = {
@@ -40,8 +41,9 @@ async function loadProduct(slug: string): Promise<ProductDetail | null> {
     next: { revalidate: 300 },
   }).catch(() => null);
   if (!response?.ok) {
-    return process.env.NODE_ENV === "development" && slug === developmentPreview.slug
-      ? developmentPreview : null;
+    const liveProduct = await liveProductDetail(slug);
+    if (liveProduct) return liveProduct;
+    return process.env.NODE_ENV === "development" && slug === developmentPreview.slug ? developmentPreview : null;
   }
   return response.json();
 }
