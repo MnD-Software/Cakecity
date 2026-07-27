@@ -4,6 +4,7 @@ import { lazy, Suspense, useState } from "react";
 import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
+import { useSavedCakes } from "@/lib/use-saved-cakes";
 const NaturalSearchPanel = lazy(() =>
   import("@/components/discovery-experience").then(module => ({ default: module.NaturalSearchPanel })),
 );
@@ -16,7 +17,7 @@ const PersonalizedRail = lazy(() =>
 
 export function Storefront() {
   const { cart, add, updateQuantity } = usePersistentCart();
-  const [favourites, setFavourites] = useState<string[]>([]);
+  const { isSaved, toggle: toggleSaved } = useSavedCakes();
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -81,7 +82,7 @@ export function Storefront() {
         <div className="product-grid">
           {products.map((product, index) => (
             <article className="product-card" key={product.id} style={{ animationDelay: `${index * 80}ms` }}>
-              <button className={`heart ${favourites.includes(product.id) ? "selected" : ""}`} onClick={() => setFavourites(items => items.includes(product.id) ? items.filter(id => id !== product.id) : [...items, product.id])} aria-label={`Favourite ${product.name}`}><Heart fill="currentColor" /></button>
+              <button className={`heart ${isSaved(product.id) ? "selected" : ""}`} onClick={() => toggleSaved(product.id)} aria-pressed={isSaved(product.id)} aria-label={`Save ${product.name}`}><Heart fill="currentColor" /></button>
               {product.tag && <span className="product-tag">{product.tag}</span>}
               <button className={`cake-visual ${product.palette}`} onClick={() => setActiveProduct(product)} aria-label={`View ${product.name}`}>
                 <span className="cake"><i /><b /><i /></span>

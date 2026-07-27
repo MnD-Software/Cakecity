@@ -9,6 +9,7 @@ import {
 import { formatKES, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
 import { trackDiscovery } from "@/lib/discovery";
+import { useSavedCakes } from "@/lib/use-saved-cakes";
 
 type ProductSummary = {
   woo_id: number; slug: string; name: string; description: string; price_kes: string;
@@ -67,7 +68,7 @@ export function ProductExperience({ product }: { product: ProductDetail }) {
   const [slot, setSlot] = useState("Today · 3:30–4:00 PM");
   const [quantity, setQuantity] = useState(1);
   const [zoom, setZoom] = useState(false);
-  const [favourite, setFavourite] = useState(false);
+  const { isSaved, toggle: toggleSaved } = useSavedCakes();
   const [added, setAdded] = useState(false);
   const [bundle, setBundle] = useState<string[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<ProductSummary[]>([]);
@@ -140,7 +141,7 @@ export function ProductExperience({ product }: { product: ProductDetail }) {
 
       <div className="product-configurator">
         <a className="back-link" href="/#shop"><ArrowLeft /> Back to the collection</a>
-        <div className="product-kicker"><span>{product.categories[0] || "Cake City signature"}</span><button onClick={() => setFavourite(value => !value)} aria-pressed={favourite}><Heart fill={favourite ? "currentColor" : "none"} /> {favourite ? "Saved" : "Save"}</button></div>
+        <div className="product-kicker"><span>{product.categories[0] || "Cake City signature"}</span><button onClick={() => toggleSaved(product.slug)} aria-pressed={isSaved(product.slug)}><Heart fill={isSaved(product.slug) ? "currentColor" : "none"} /> {isSaved(product.slug) ? "Saved" : "Save"}</button></div>
         <h1>{product.name}</h1>
         <div className="product-rating">
           <span><Star fill="currentColor" /> {Number(product.average_rating || 0).toFixed(1)}</span>

@@ -128,6 +128,10 @@ Release v1.2 adds natural-language cake search, explainable recommendation ranki
 purchase-history personalization, a personalized homepage edit and an operational Cake Concierge.
 The privacy, caching and ranking boundary is documented in `docs/INTELLIGENT_DISCOVERY.md`.
 
+Release v1.3 adds local-first favourites that merge securely after sign-in, an account celebration
+library, and reusable saved inscription messages. The ownership and synchronization contract is
+documented in `docs/SAVED_CELEBRATIONS.md`.
+
 ## Configure delivery proof
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API and

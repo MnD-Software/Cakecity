@@ -112,3 +112,15 @@ test("intelligent discovery is visible and operational", () => {
   assert.match(storefront, /PersonalizedRail/);
   assert.match(storefront, /ConciergePanel/);
 });
+
+test("saved celebrations persist locally and synchronize to the protected account", () => {
+  const hook = readFileSync(new URL("../lib/use-saved-cakes.ts", import.meta.url), "utf8");
+  const saved = readFileSync(new URL("../app/account/saved/page.tsx", import.meta.url), "utf8");
+  const product = readFileSync(new URL("../components/product-experience.tsx", import.meta.url), "utf8");
+  assert.match(hook, /cakecity-saved-cakes-v1/);
+  assert.match(hook, /\/v1\/account\/saved\/cakes/);
+  assert.match(saved, /\/v1\/account\/saved\/messages/);
+  assert.match(saved, /Favourite cakes/);
+  assert.match(saved, /Saved inscriptions/);
+  assert.match(product, /toggleSaved\(product\.slug\)/);
+});

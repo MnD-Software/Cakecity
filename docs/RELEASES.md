@@ -3,6 +3,13 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.3.0 — Saved celebrations
+
+- Local-first favourite hearts across the storefront and premium product journey.
+- Authenticated, cross-device saved cake collections backed by current WooCommerce-synchronized data.
+- Reusable inscription messages and a responsive private celebration library at `/account/saved`.
+- Owner-scoped APIs, cascade-safe storage, bounded collection sizes and automated contract tests.
+
 ## 1.2.4 — Repeatable performance evidence
 
 - Enforces unchanged Lighthouse budgets against the median of three independent samples per route.
