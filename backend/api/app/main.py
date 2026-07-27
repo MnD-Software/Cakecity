@@ -19,6 +19,7 @@ from .routes.admin import router as admin_router
 from .routes.kitchen import router as kitchen_router
 from .routes.driver import router as driver_router
 from .routes.corporate import router as corporate_router
+from .routes.discovery import router as discovery_router
 from .settings import settings
 from .database import engine
 from .middleware import platform_guard, redis as rate_limit_redis
@@ -33,7 +34,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Cake City Platform API",
-    version="1.1.0",
+    version="1.2.0",
     docs_url="/docs" if settings.environment != "production" else None,
     lifespan=lifespan,
 )
@@ -43,7 +44,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization", "Idempotency-Key", "X-Payment-Secret", "X-WC-Webhook-Signature", "X-WC-Webhook-ID",
-                   "X-WC-Webhook-Topic", "X-WC-Webhook-Resource", "X-Request-ID"],
+                   "X-WC-Webhook-Topic", "X-WC-Webhook-Resource", "X-Request-ID",
+                   "X-Discovery-Session"],
 )
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 app.middleware("http")(platform_guard)
@@ -62,6 +64,7 @@ app.include_router(admin_router)
 app.include_router(kitchen_router)
 app.include_router(driver_router)
 app.include_router(corporate_router)
+app.include_router(discovery_router)
 
 
 @app.get("/health", tags=["system"])

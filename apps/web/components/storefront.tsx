@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
+import { ConciergePanel, NaturalSearchPanel, PersonalizedRail } from "@/components/discovery-experience";
 
 export function Storefront() {
   const { cart, add, updateQuantity } = usePersistentCart();
@@ -11,6 +12,7 @@ export function Storefront() {
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [conciergeOpen, setConciergeOpen] = useState(false);
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
@@ -86,6 +88,8 @@ export function Storefront() {
         </div>
       </section>
 
+      <PersonalizedRail />
+
       <section className="occasion" id="moments">
         <div className="occasion-copy"><p className="eyebrow light">Find your perfect cake</p><h2>What are we<br /><em>celebrating?</em></h2><p>Tell us the moment. We’ll help with the magic.</p></div>
         <div className="occasion-grid">
@@ -95,12 +99,13 @@ export function Storefront() {
 
       <section className="concierge section" id="concierge">
         <div><span className="concierge-mark">CC</span><p className="eyebrow">Cake concierge</p><h2>Not sure what to choose?</h2><p>Share the occasion, who it’s for and your budget. Our cake concierge will curate a few perfect options in under a minute.</p></div>
-        <button className="button primary">Help me choose <Sparkles /></button>
+        <button className="button primary" onClick={() => setConciergeOpen(true)}>Help me choose <Sparkles /></button>
       </section>
 
       <footer><a className="brand inverse" href="#"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
 
-      {searchOpen && <SearchPanel close={() => setSearchOpen(false)} />}
+      {searchOpen && <NaturalSearchPanel close={() => setSearchOpen(false)} />}
+      {conciergeOpen && <ConciergePanel close={() => setConciergeOpen(false)} />}
       {activeProduct && <ProductPanel product={activeProduct} close={() => setActiveProduct(null)} add={configuration => addConfigured(activeProduct, configuration)} />}
       <CartPanel open={cartOpen} close={() => setCartOpen(false)} cart={cart} subtotal={subtotal} update={updateQuantity} />
     </main>

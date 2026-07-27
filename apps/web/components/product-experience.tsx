@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatKES, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
+import { trackDiscovery } from "@/lib/discovery";
 
 type ProductSummary = {
   woo_id: number; slug: string; name: string; description: string; price_kes: string;
@@ -72,6 +73,7 @@ export function ProductExperience({ product }: { product: ProductDetail }) {
   const [recentlyViewed, setRecentlyViewed] = useState<ProductSummary[]>([]);
 
   useEffect(() => {
+    void trackDiscovery("view", { product_slug: product.slug, context: { surface: "product_page" } });
     try {
       const recent = JSON.parse(localStorage.getItem("cakecity-recent-v1") || "[]") as ProductSummary[];
       setRecentlyViewed(recent.filter(item => item.slug !== product.slug).slice(0, 4));
@@ -93,6 +95,10 @@ export function ProductExperience({ product }: { product: ProductDetail }) {
     const item = asCartProduct(product);
     for (let index = 0; index < quantity; index += 1) add(item, { size, message, addOns });
     setAdded(true);
+    void trackDiscovery("add_to_cart", {
+      product_slug: product.slug,
+      context: { quantity, size, add_ons: addOns.length },
+    });
     window.setTimeout(() => setAdded(false), 3500);
   }
 

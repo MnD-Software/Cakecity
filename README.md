@@ -124,6 +124,10 @@ optional video/360 media, size and inscription choices, priced celebration extra
 windows, dietary facts, verified rating summaries, frequently-bought pairings and recently viewed
 continuity. WooCommerce metadata setup is documented in `docs/PRODUCT_EXPERIENCE.md`.
 
+Release v1.2 adds natural-language cake search, explainable recommendation ranking, signed-in
+purchase-history personalization, a personalized homepage edit and an operational Cake Concierge.
+The privacy, caching and ranking boundary is documented in `docs/INTELLIGENT_DISCOVERY.md`.
+
 ## Configure delivery proof
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API and

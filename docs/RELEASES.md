@@ -3,6 +3,15 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.2.0 — Intelligent discovery and Cake Concierge
+
+- Natural-language intent extraction for occasion, flavour, style, recipient, age, budget and guests.
+- Explainable, deterministic in-stock product ranking with budget and verified-rating signals.
+- Signed-in personalization from eligible order categories and flavour attributes.
+- Redis-cached guest search, trending recommendations and structured concierge shortlists.
+- Premium natural search, personalized homepage edit and working Cake Concierge interfaces.
+- Privacy-limited discovery analytics using hashed browser sessions and primitive context only.
+
 ## 1.1.0 — Premium product and merchandising journey
 
 - Dedicated dynamic cake pages with gallery, zoom, video and optional 360-degree media contracts.

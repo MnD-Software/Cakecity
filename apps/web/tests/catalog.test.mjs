@@ -99,3 +99,16 @@ test("premium product journey remains connected to authoritative checkout", () =
   assert.match(experience, /Recently viewed/);
   assert.match(cart, /addOnPrices/);
 });
+
+test("intelligent discovery is visible and operational", () => {
+  const discovery = readFileSync(new URL("../components/discovery-experience.tsx", import.meta.url), "utf8");
+  const tracking = readFileSync(new URL("../lib/discovery.ts", import.meta.url), "utf8");
+  const storefront = readFileSync(new URL("../components/storefront.tsx", import.meta.url), "utf8");
+  assert.match(discovery, /\/v1\/discovery\/search/);
+  assert.match(discovery, /\/v1\/discovery\/recommendations/);
+  assert.match(discovery, /\/v1\/discovery\/concierge/);
+  assert.match(discovery, /six-year-old daughter/);
+  assert.match(tracking, /X-Discovery-Session/);
+  assert.match(storefront, /PersonalizedRail/);
+  assert.match(storefront, /ConciergePanel/);
+});

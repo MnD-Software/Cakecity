@@ -73,6 +73,27 @@ class SyncCheckpoint(Base):
     last_error: Mapped[str | None] = mapped_column(Text)
 
 
+class DiscoveryEvent(Base):
+    __tablename__ = "discovery_events"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL")
+    )
+    session_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    product_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL")
+    )
+    query: Mapped[str | None] = mapped_column(String(240))
+    context: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        Index("ix_discovery_customer_created", "customer_id", "created_at"),
+        Index("ix_discovery_session_created", "session_hash", "created_at"),
+        Index("ix_discovery_event_created", "event_type", "created_at"),
+    )
+
+
 class Customer(Base):
     __tablename__ = "customers"
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
