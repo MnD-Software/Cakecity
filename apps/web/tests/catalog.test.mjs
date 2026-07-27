@@ -13,6 +13,7 @@ test("local storefront can render the public WooCommerce catalogue without expos
   assert.match(loader, /import "server-only"/);
   assert.match(loader, /wc\/store\/v1/);
   assert.doesNotMatch(loader, /consumer_key|consumer_secret|ck_[a-f0-9]{20}|cs_[a-f0-9]{20}/);
+  assert.match(loader, /categories,/);
   assert.match(page, /liveStorefrontProducts/);
 });
 

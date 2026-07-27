@@ -34,17 +34,21 @@ export async function liveStorefrontProducts(limit = 48): Promise<Product[]> {
     const response = await fetch(`${STORE_API}/products?per_page=${limit}`, { next: { revalidate: 300 } });
     if (!response.ok) return [];
     const payload = await response.json() as StoreProduct[];
-    return payload.map((item, index) => ({
-      id: item.slug,
-      name: clean(item.name),
-      note: clean(item.categories?.[0]?.name || "Baked fresh by Cake City"),
-      price: Number(item.prices.price) / (10 ** item.prices.currency_minor_unit),
-      rating: Number(item.average_rating || 0),
-      tag: item.on_sale ? "Offer" : undefined,
-      palette: ["ruby", "caramel", "cocoa", "berry"][index % 4],
-      imageUrl: item.images?.[0]?.src,
-      category: clean(item.categories?.[0]?.name || "Cakes"),
-    }));
+    return payload.map((item, index) => {
+      const categories = (item.categories || []).map(category => clean(category.name)).filter(Boolean);
+      return {
+        id: item.slug,
+        name: clean(item.name),
+        note: categories[0] || "Baked fresh by Cake City",
+        price: Number(item.prices.price) / (10 ** item.prices.currency_minor_unit),
+        rating: Number(item.average_rating || 0),
+        tag: item.on_sale ? "Offer" : undefined,
+        palette: ["ruby", "caramel", "cocoa", "berry"][index % 4],
+        imageUrl: item.images?.[0]?.src,
+        category: categories[0] || "Cakes",
+        categories,
+      };
+    });
   } catch {
     return [];
   }

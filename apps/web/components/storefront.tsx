@@ -33,14 +33,14 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const categoryPriority = ["Cakes of the Month", "Chocolate Sponge Base", "Vanilla Sponge Base", "Custom Cakes", "Cheese Cakes", "Pound Cakes", "Cupcakes", "Cookies", "Cake Slices", "Tea Cakes"];
-  const liveCategories = Array.from(new Set(products.map(product => product.category).filter((category): category is string => Boolean(category))));
+  const liveCategories = Array.from(new Set(products.flatMap(product => product.categories?.length ? product.categories : product.category ? [product.category] : [])));
   const categories = ["All cakes", ...liveCategories.sort((a, b) => {
     const ai = categoryPriority.indexOf(a);
     const bi = categoryPriority.indexOf(b);
     if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
     return a.localeCompare(b);
   }).slice(0, 10)];
-  const visibleProducts = activeCategory === "All cakes" ? products.slice(0, 12) : products.filter(product => product.category === activeCategory);
+  const visibleProducts = activeCategory === "All cakes" ? products.slice(0, 12) : products.filter(product => product.categories?.includes(activeCategory) || product.category === activeCategory);
   const offers = [
     { kicker: "Cake of the month", title: "Butterscotch", price: "From KES 3,000", image: "/images/offer-butterscotch.avif" },
     { kicker: "A chocolate classic", title: "Midnight Fantasy", price: "From KES 2,600", image: "/images/offer-midnight.avif" },
@@ -64,11 +64,6 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
 
   return (
     <main>
-      <div className="announcement">
-        <span>Complimentary delivery in Nairobi on orders over KES 5,000</span>
-        <a href="/account/rewards">Discover Cake City Rewards <ArrowRight size={14} /></a>
-      </div>
-
       <header className="header">
         <button className="icon-button mobile-menu" onClick={() => setMobileNavOpen(open => !open)} aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? "Close menu" : "Open menu"}>{mobileNavOpen ? <X /> : <Menu />}</button>
         <a className="brand" href="/" aria-label="Cake City home"><img src={CAKE_CITY_LOGO} alt="Cake City" /></a>

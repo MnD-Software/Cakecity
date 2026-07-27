@@ -8,6 +8,7 @@ export type Product = {
   palette: string;
   imageUrl?: string;
   category?: string;
+  categories?: string[];
 };
 
 export type CartItem = Product & {
