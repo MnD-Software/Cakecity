@@ -15,6 +15,7 @@ from .services.campaigns import claim_due_campaign, complete_campaign_delivery, 
 from .services.fulfilment import ensure_production_ticket, process_stage_command, synchronize_operational_state
 from .routes.corporate import process_due_corporate_recurring
 from .routes.subscriptions import process_due_subscriptions
+from .routes.carts import complete_customer_cart, process_abandoned_carts
 from zoneinfo import ZoneInfo
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
@@ -60,6 +61,8 @@ async def mark_payment_confirmed(db, intent: PaymentIntent, provider_payload: di
     intent.provider_payload = {**intent.provider_payload, **provider_payload}
     order = await db.get(Order, intent.order_id)
     order.state = "paid"
+    if order.customer_id:
+        await complete_customer_cart(db, order.customer_id)
     existing = await db.scalar(select(OutboxEvent.id).where(
         OutboxEvent.aggregate_id == order.id, OutboxEvent.topic == "order.payment_confirmed"
     ))
@@ -231,6 +234,7 @@ async def run() -> None:
     last_reminder_date = None
     last_corporate_check = None
     last_subscription_check = None
+    last_cart_recovery_check = None
     while True:
         now = datetime.now(timezone.utc)
         today = now.astimezone(ZoneInfo("Africa/Nairobi")).date()
@@ -249,6 +253,11 @@ async def run() -> None:
                 await process_due_subscriptions(db, now)
                 await db.commit()
             last_subscription_check = now
+        if last_cart_recovery_check is None or (now - last_cart_recovery_check).total_seconds() >= 300:
+            async with SessionFactory() as db:
+                await process_abandoned_carts(db, now)
+                await db.commit()
+            last_cart_recovery_check = now
         async with SessionFactory() as db:
             event = await claim_event(db)
             webhook = None if event else await claim_webhook(db)

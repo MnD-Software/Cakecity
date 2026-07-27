@@ -26,6 +26,8 @@ export default function PaymentReturnPage() {
         });
         setState(result.state);
         if (result.state === "paid") {
+          await api("/v1/cart/complete", { method: "POST" }).catch(() => undefined);
+          localStorage.removeItem("cakecity-cart-v1");
           sessionStorage.removeItem("cakecity-payment-idempotency");
           return;
         }

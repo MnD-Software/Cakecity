@@ -149,3 +149,17 @@ test("consumer cake plans support scheduled and recurring secure checkout", () =
   assert.match(product, /Make this a weekly or monthly tradition/);
   assert.match(account, /Scheduled and recurring orders/);
 });
+
+test("cart continuity synchronizes, recovers and closes after verified payment", () => {
+  const cart = readFileSync(new URL("../lib/use-persistent-cart.ts", import.meta.url), "utf8");
+  const checkout = readFileSync(new URL("../app/checkout/page.tsx", import.meta.url), "utf8");
+  const returned = readFileSync(new URL("../app/checkout/payment-return/page.tsx", import.meta.url), "utf8");
+  const account = readFileSync(new URL("../app/account/page.tsx", import.meta.url), "utf8");
+  assert.match(cart, /method: "PUT"/);
+  assert.match(cart, /\/v1\/cart/);
+  assert.match(checkout, /\/v1\/cart\/checkout-started/);
+  assert.match(checkout, /\/v1\/cart\/recovered/);
+  assert.match(checkout, /\/v1\/cart\/complete/);
+  assert.match(returned, /cakecity-cart-v1/);
+  assert.match(account, /Continue your cart on this device/);
+});

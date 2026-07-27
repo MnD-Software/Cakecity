@@ -3,6 +3,14 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.6.0 — Cart continuity and recovery
+
+- Local-first PWA bags merged with authenticated PostgreSQL carts across devices.
+- Canonical configuration hashes for separate cake sizes, inscriptions and celebration extras.
+- Two-hour abandonment eligibility with 24-hour active-checkout suppression.
+- Idempotent transactional recovery notifications and one-tap secure checkout restore.
+- Server-side conversion closure for wallet, M-Pesa and verified card payments.
+
 ## 1.5.4 — Deterministic Android dependency boundary
 
 - Pins `path_provider_android` to the last pre-JNI implementation after resolving the annotated

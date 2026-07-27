@@ -20,7 +20,7 @@ type SavedAddress = {
 };
 
 export default function CheckoutPage() {
-  const { cart, hydrated } = usePersistentCart();
+  const { cart, hydrated, clear } = usePersistentCart();
   const [fulfilment, setFulfilment] = useState<Fulfilment>("delivery");
   const [slot, setSlot] = useState("Today · 3:30–4:00 PM");
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -47,6 +47,12 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("recovered") === "1") {
+      void api("/v1/cart/recovered", { method: "POST" }).catch(() => undefined);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!payment || paymentMethod !== "mpesa" || !["created", "pending"].includes(paymentState)) return;
     const timer = window.setInterval(async () => {
       try {
@@ -55,6 +61,10 @@ export default function CheckoutPage() {
         });
         setPaymentState(result.state);
         if (["paid", "failed", "cancelled", "review_required"].includes(result.state)) window.clearInterval(timer);
+        if (result.state === "paid") {
+          await api("/v1/cart/complete", { method: "POST" }).catch(() => undefined);
+          clear();
+        }
       } catch {
         // Temporary connectivity errors are retried without losing the payment reference.
       }
@@ -80,6 +90,7 @@ export default function CheckoutPage() {
       });
       setDetails(captured);
       setQuote(response);
+      await api("/v1/cart/checkout-started", { method: "POST" }).catch(() => undefined);
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "We could not prepare checkout");
@@ -116,6 +127,10 @@ export default function CheckoutPage() {
       setPaymentState(created.state);
       setStatus("");
       sessionStorage.setItem("cakecity-active-payment", JSON.stringify(created));
+      if (created.state === "paid") {
+        await api("/v1/cart/complete", { method: "POST" }).catch(() => undefined);
+        clear();
+      }
       if (created.action.type === "redirect" && created.action.redirect_url) {
         window.location.assign(created.action.redirect_url);
       }

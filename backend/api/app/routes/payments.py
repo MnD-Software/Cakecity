@@ -19,6 +19,7 @@ from ..settings import settings
 from ..services.flutterwave import FlutterwaveClient, verify_flutterwave_signature
 from ..services.mpesa import MpesaClient, normalize_kenyan_phone, parse_stk_callback
 from .checkout import CheckoutQuoteInput, price_checkout
+from .carts import complete_customer_cart
 
 router = APIRouter(prefix="/v1/payments", tags=["payments"])
 
@@ -166,6 +167,7 @@ async def create_payment_intent(
             aggregate_type="order", aggregate_id=order.id, topic="order.payment_confirmed",
             payload={"order_id": str(order.id), "payment_intent_id": str(intent.id)},
         ))
+        await complete_customer_cart(db, customer.id)
         await db.commit()
         return await response_for(intent, order)
     await db.commit()
@@ -245,6 +247,8 @@ async def mpesa_callback(callback_secret: str, request: Request, db: AsyncSessio
             intent.paid_at = datetime.now(timezone.utc)
             order = await db.get(Order, intent.order_id)
             order.state = "paid"
+            if order.customer_id:
+                await complete_customer_cart(db, order.customer_id)
             db.add(OutboxEvent(
                 aggregate_type="order", aggregate_id=order.id, topic="order.payment_confirmed",
                 payload={"order_id": str(order.id), "payment_intent_id": str(intent.id)},

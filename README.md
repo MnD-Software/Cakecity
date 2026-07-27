@@ -138,6 +138,10 @@ removing guest checkout. The workflow and ownership rules are documented in `doc
 Release v1.5 adds one-time scheduled orders and recurring customer cake plans with idempotent worker
 renewals and secure checkout confirmation. See `docs/CONSUMER_SUBSCRIPTIONS.md`.
 
+Release v1.6 adds cross-device signed-in cart synchronization, abandonment eligibility controls,
+transactional recovery notifications and verified-payment conversion tracking. See
+`docs/CART_RECOVERY.md`.
+
 ## Configure delivery proof
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API and

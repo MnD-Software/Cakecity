@@ -214,6 +214,10 @@ class Cart(Base):
     currency: Mapped[str] = mapped_column(String(3), default="KES", nullable=False)
     state: Mapped[str] = mapped_column(String(24), default="active", nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_activity_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    checkout_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    recovery_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    recovered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     __table_args__ = (Index("ix_carts_customer_state", "customer_id", "state"),)
@@ -226,9 +230,10 @@ class CartItem(Base):
     product_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     configuration: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    config_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     __table_args__ = (
-        UniqueConstraint("cart_id", "product_id", name="uq_cart_product"),
+        UniqueConstraint("cart_id", "product_id", "config_hash", name="uq_cart_product_configuration"),
         Index("ix_cart_items_cart", "cart_id"),
     )
 

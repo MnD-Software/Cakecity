@@ -20,4 +20,5 @@ def test_migration_runner_resolves_the_authoritative_schema() -> None:
         "010_intelligent_discovery.sql",
         "011_saved_celebrations.sql",
         "012_consumer_subscriptions.sql",
+        "013_cart_recovery.sql",
     ]

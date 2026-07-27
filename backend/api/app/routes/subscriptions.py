@@ -179,7 +179,7 @@ async def process_due_subscriptions(db: AsyncSession, now: datetime) -> int:
                 db, plan.customer_id, "subscription",
                 f"{plan.name} is ready to confirm",
                 f"Your {product.name if product else 'Cake City cake'} is scheduled. Review and confirm secure payment.",
-                {"href": f"/account/subscriptions?renewal={run.id}", "subscription_id": str(plan.id)},
+                {"url": f"/account/subscriptions?renewal={run.id}", "subscription_id": str(plan.id)},
             )
             created += 1
         plan.last_run_at = now
