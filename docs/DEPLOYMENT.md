@@ -13,8 +13,9 @@ API, worker, PostgreSQL and Redis services through the root Render Blueprint.
    binds Render's runtime `PORT`.
 5. Confirm `GET https://<api-host>/health` returns `200` and
    `GET https://<api-host>/ready` returns `{"status":"ready"}`.
-6. In Vercel, import the same repository as a project named `cakecity-web`. Leave the Root
-   Directory at the repository root so Vercel uses the root `vercel.json`.
+6. In Vercel, import the same repository as a project named `cakecity-web`. Set the Root Directory
+   to `apps/web` so Vercel detects the app's Next.js dependency and uses its `vercel.json`. Leave
+   the Output Directory blank so the Next.js default is used.
 7. Add `NEXT_PUBLIC_API_URL=https://cakecity-api.onrender.com` to Production, Preview and
    Development, then deploy. After adding `api.cakecity.co.ke`, replace this value with the custom
    API origin and redeploy.

@@ -82,5 +82,8 @@ https://cakecity-api.onrender.com/ready
 NEXT_PUBLIC_API_URL=https://cakecity-api.onrender.com
 ```
 
+Set the Vercel project's Root Directory to `apps/web` and leave Output Directory blank. The
+app-level `vercel.json` installs the repository workspace and builds only `@cakecity/web`.
+
 Redeploy Vercel, then update `STOREFRONT_URL` and `ALLOWED_ORIGINS` in Render with the exact final
 Vercel URL. Redeploy Render once more before testing accounts or checkout.
