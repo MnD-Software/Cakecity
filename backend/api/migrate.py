@@ -9,7 +9,18 @@ import os
 from pathlib import Path
 import asyncpg
 
-SOURCE_MIGRATIONS = Path(__file__).resolve().parents[2] / "database" / "migrations"
+
+def source_migrations_for(script_path: Path) -> Path:
+    """Find repository migrations without assuming a minimum path depth."""
+    resolved = script_path.resolve()
+    for parent in resolved.parents:
+        candidate = parent / "database" / "migrations"
+        if candidate.is_dir():
+            return candidate
+    return resolved.parent / "database" / "migrations"
+
+
+SOURCE_MIGRATIONS = source_migrations_for(Path(__file__))
 PACKAGED_MIGRATIONS = Path(__file__).with_name("migrations")
 MIGRATIONS = SOURCE_MIGRATIONS if SOURCE_MIGRATIONS.is_dir() else PACKAGED_MIGRATIONS
 

@@ -1,4 +1,6 @@
-from migrate import MIGRATIONS, PACKAGED_MIGRATIONS, SOURCE_MIGRATIONS
+from pathlib import Path
+
+from migrate import MIGRATIONS, PACKAGED_MIGRATIONS, SOURCE_MIGRATIONS, source_migrations_for
 
 
 def test_migration_runner_resolves_the_authoritative_schema() -> None:
@@ -22,3 +24,9 @@ def test_migration_runner_resolves_the_authoritative_schema() -> None:
         "012_consumer_subscriptions.sql",
         "013_cart_recovery.sql",
     ]
+
+
+def test_migration_runner_supports_a_shallow_container_path() -> None:
+    assert source_migrations_for(Path("/app/migrate.py")).as_posix().endswith(
+        "/app/database/migrations"
+    )
