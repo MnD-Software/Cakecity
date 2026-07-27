@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -49,7 +50,13 @@ app.add_middleware(
                    "X-WC-Webhook-Topic", "X-WC-Webhook-Resource", "X-Request-ID",
                    "X-Discovery-Session"],
 )
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+trusted_hosts = list(settings.allowed_hosts)
+render_hostname = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if render_hostname and render_hostname not in trusted_hosts:
+    trusted_hosts.append(render_hostname)
+if os.getenv("RENDER") and "*.onrender.com" not in trusted_hosts:
+    trusted_hosts.append("*.onrender.com")
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=trusted_hosts)
 app.middleware("http")(platform_guard)
 app.include_router(catalog_router)
 app.include_router(webhook_router)

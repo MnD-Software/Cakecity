@@ -1,5 +1,6 @@
 from app.settings import Settings
 import pytest
+from sqlalchemy.engine import make_url
 
 
 def test_render_postgres_url_uses_async_driver():
@@ -38,3 +39,13 @@ def test_render_accepts_json_or_plain_origin_lists(monkeypatch):
         "https://two.vercel.app",
     ]
     assert settings.allowed_hosts == ["cakecity-api.onrender.com"]
+
+
+def test_neon_ssl_query_can_be_removed_for_asyncpg():
+    url = make_url(
+        "postgresql+asyncpg://user:pass@ep-example.neon.tech/db"
+        "?sslmode=require&channel_binding=require"
+    )
+    normalized = url.difference_update_query(["sslmode", "channel_binding"])
+    assert "sslmode" not in normalized.query
+    assert "channel_binding" not in normalized.query
