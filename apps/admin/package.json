@@ -1,6 +1,6 @@
 {
   "name": "@cakecity/admin",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",

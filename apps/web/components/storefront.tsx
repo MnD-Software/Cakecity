@@ -1,7 +1,7 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Bell, Check, ChevronRight, Gift, Heart, Home, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, WandSparkles, X, Zap } from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, ChevronRight, Gift, Heart, Home, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, Store, UserRound, Users, X } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
 import { useSavedCakes } from "@/lib/use-saved-cakes";
@@ -23,20 +23,25 @@ export function Storefront() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [conciergeOpen, setConciergeOpen] = useState(false);
   const [offerIndex, setOfferIndex] = useState(0);
+  const offerTrackRef = useRef<HTMLDivElement>(null);
   const hasDiscoveryApi = process.env.NODE_ENV !== "production" || Boolean(process.env.NEXT_PUBLIC_API_URL);
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const offers = [
-    { kicker: "Cake of the month", title: "Butterscotch 1.5kg offer", copy: "A Cake City favourite sized for the whole table.", price: "KES 3,500", tone: "butterscotch" },
-    { kicker: "Limited drop", title: "Midnight Fantasy 1.5kg", copy: "Deep chocolate, glossy ganache and a celebratory finish.", price: "KES 3,500", tone: "midnight" },
-    { kicker: "Party ready", title: "Pink Simba birthday set", copy: "Cake, colour and school-party energy in one easy order.", price: "KES 12,000", tone: "simba" },
+    { kicker: "Cake of the month", title: "Butterscotch", price: "From KES 3,000", image: "/images/offer-butterscotch.avif" },
+    { kicker: "A chocolate classic", title: "Midnight Fantasy", price: "From KES 2,600", image: "/images/offer-midnight.avif" },
+    { kicker: "Fresh from the kitchen", title: "Blueberry Delight", price: "From KES 3,000", image: "/images/offer-blueberry.avif" },
   ];
 
   useEffect(() => {
     const timer = window.setInterval(() => setOfferIndex(current => (current + 1) % offers.length), 6500);
     return () => window.clearInterval(timer);
   }, [offers.length]);
+
+  useEffect(() => {
+    offerTrackRef.current?.scrollTo({ left: offerIndex * offerTrackRef.current.clientWidth, behavior: "smooth" });
+  }, [offerIndex]);
 
   const addConfigured = (product: Product, configuration: { size: CartItem["size"]; message: string }) => {
     add(product, configuration);
@@ -65,11 +70,20 @@ export function Storefront() {
         </div>
       </header>
 
+      <section className="plan-wrap" aria-label="Find the right cake">
+        <div className="plan-bar">
+          <button onClick={() => setConciergeOpen(true)}><Gift /><span><small>Occasion</small><b>What are we celebrating?</b></span></button>
+          <button onClick={() => setConciergeOpen(true)}><CalendarDays /><span><small>When</small><b>Choose your date</b></span></button>
+          <button onClick={() => setConciergeOpen(true)}><Users /><span><small>Guests</small><b>How many are sharing?</b></span></button>
+          <button className="plan-search" onClick={() => setConciergeOpen(true)} aria-label="Find cakes"><Search /></button>
+        </div>
+      </section>
+
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">The celebration edit · 2026</p>
-          <h1>Made for<br />your <em>moment.</em></h1>
-          <p>Thoughtfully crafted cakes for the people and milestones that deserve something extraordinary.</p>
+          <p className="eyebrow">Baked in Nairobi, every day</p>
+          <h1>A cake for<br />every kind <em>of day.</em></h1>
+          <p>From last-minute birthdays to long-planned weddings, we bake the cakes people gather around.</p>
           <div className="hero-actions">
             <a className="button primary" href="#shop">Find your cake <ArrowRight /></a>
             <a className="text-link" href="#concierge">Create something custom</a>
@@ -85,31 +99,28 @@ export function Storefront() {
         <span><Check /> Baked fresh daily</span><span><Check /> Delivered in a 30-min window</span><span><Check /> Happiness guaranteed</span><span><Check /> Secure M-Pesa checkout</span>
       </section>
 
-      <section className="offer-carousel" aria-roledescription="carousel" aria-label="Cake City offers">
-        <div className={`offer-visual ${offers[offerIndex].tone}`} aria-hidden="true">
-          <span className="offer-orbit orbit-one" /><span className="offer-orbit orbit-two" />
-          <span className="cake offer-cake"><i /><b /><i /></span>
-          <span className="offer-badge">1.5KG</span>
+      <section className="photo-carousel" aria-roledescription="carousel" aria-label="Featured Cake City cakes">
+        <div className="photo-carousel-track" ref={offerTrackRef} onScroll={event => setOfferIndex(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
+          {offers.map((offer, index) => <article className="photo-slide" key={offer.title} aria-hidden={index !== offerIndex}>
+            <img src={offer.image} alt={`${offer.title} cake`} />
+            <div className="photo-slide-shade" />
+            <div className="photo-slide-copy"><p>{offer.kicker}</p><h2>{offer.title}</h2><span>{offer.price}</span><a href="#shop">Shop the cake <ArrowRight /></a></div>
+          </article>)}
         </div>
-        <div className="offer-copy" aria-live="polite">
-          <p className="eyebrow">{offers[offerIndex].kicker}</p>
-          <span className="offer-count">0{offerIndex + 1} / 0{offers.length}</span>
-          <h2>{offers[offerIndex].title}</h2>
-          <p>{offers[offerIndex].copy}</p>
-          <div className="offer-action-row"><strong>{offers[offerIndex].price}</strong><a className="button primary" href="#shop">Shop this offer <ArrowRight /></a></div>
-          <div className="offer-controls">
-            <button onClick={() => setOfferIndex(current => (current - 1 + offers.length) % offers.length)} aria-label="Previous offer"><ArrowLeft /></button>
-            <div>{offers.map((offer, index) => <button key={offer.title} className={index === offerIndex ? "active" : ""} onClick={() => setOfferIndex(index)} aria-label={`Show ${offer.title}`} aria-current={index === offerIndex ? "true" : undefined} />)}</div>
-            <button onClick={() => setOfferIndex(current => (current + 1) % offers.length)} aria-label="Next offer"><ArrowRight /></button>
-          </div>
+        <div className="photo-carousel-ui">
+          <div className="photo-dots">{offers.map((offer, index) => <button key={offer.title} className={index === offerIndex ? "active" : ""} onClick={() => setOfferIndex(index)} aria-label={`Show ${offer.title}`} />)}</div>
+          <div><button onClick={() => setOfferIndex(current => (current - 1 + offers.length) % offers.length)} aria-label="Previous cake"><ArrowLeft /></button><button onClick={() => setOfferIndex(current => (current + 1) % offers.length)} aria-label="Next cake"><ArrowRight /></button></div>
         </div>
       </section>
 
       <section className="section" id="shop">
         <div className="section-heading">
-          <div><p className="eyebrow">Curated for you</p><h2>The cakes everyone<br />is talking about.</h2></div>
+          <div><p className="eyebrow">Customer favourites</p><h2>The cakes Nairobi<br />keeps coming back for.</h2></div>
           <a className="text-link" href="#all">Explore all cakes <ArrowRight /></a>
         </div>
+        <nav className="cake-categories" aria-label="Cake categories">
+          {["All cakes", "Chocolate", "Vanilla", "Cheesecakes", "Cupcakes", "Wedding", "Custom cakes"].map((category, index) => <button className={index === 0 ? "active" : ""} key={category}>{category}</button>)}
+        </nav>
         <div className="product-grid">
           {products.map((product, index) => (
             <article className="product-card" key={product.id} style={{ animationDelay: `${index * 80}ms` }}>
@@ -132,12 +143,12 @@ export function Storefront() {
       {hasDiscoveryApi && <Suspense fallback={null}><PersonalizedRail /></Suspense>}
 
       <section className="smart-studio section" id="smart-studio">
-        <div className="smart-heading"><p className="eyebrow">Celebration OS</p><h2>Your moment,<br /><em>beautifully orchestrated.</em></h2><p>A faster, app-like way to plan, personalise and follow every celebration.</p></div>
+        <div className="smart-heading"><p className="eyebrow">More from Cake City</p><h2>However you’re<br /><em>celebrating, we’re here.</em></h2><p>Useful services from the same people who bake and decorate your cake.</p></div>
         <div className="smart-grid">
-          <button className="smart-card featured" onClick={() => setConciergeOpen(true)}><span className="smart-icon"><WandSparkles /></span><small>AI cake concierge</small><b>Describe the moment.<br />Meet your perfect cake.</b><span>Start a recommendation <ArrowRight /></span></button>
-          <a className="smart-card" href="/account/moments"><span className="smart-icon"><Bell /></span><small>Moment memory</small><b>Never miss a birthday again.</b><span>Save a celebration <ArrowRight /></span></a>
-          <a className="smart-card dark" href="/account/orders"><span className="delivery-pulse"><i /></span><small>Live delivery</small><b>Kitchen to doorstep, tracked.</b><span>Track an order <ArrowRight /></span></a>
-          <a className="smart-card" href="/account/rewards"><span className="smart-icon"><Zap /></span><small>City rewards</small><b>Turn every celebration into your next.</b><span>See your rewards <ArrowRight /></span></a>
+          <button className="smart-card featured" onClick={() => setConciergeOpen(true)}><span className="smart-icon"><Gift /></span><small>Personal cake service</small><b>Tell us about the person.<br />We’ll help you choose.</b><span>Talk to our cake team <ArrowRight /></span></button>
+          <a className="smart-card" href="/account/moments"><span className="smart-icon"><Bell /></span><small>Celebration reminders</small><b>Keep the important dates close.</b><span>Save a date <ArrowRight /></span></a>
+          <a className="smart-card dark" href="/account/orders"><span className="smart-icon"><MapPin /></span><small>Order tracking</small><b>Know when your cake leaves our kitchen.</b><span>Track an order <ArrowRight /></span></a>
+          <a className="smart-card" href="/corporate"><span className="smart-icon"><Store /></span><small>Offices and events</small><b>Catering, gifting and cakes for a crowd.</b><span>Plan an event <ArrowRight /></span></a>
         </div>
       </section>
 

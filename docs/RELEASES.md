@@ -3,6 +3,14 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 2.0.0 — Premium mobile storefront
+
+- Full-bleed photographic offer carousel with autoplay, native swipe, scroll snap and accessible controls.
+- Human-first occasion, date and guest discovery inspired by marketplace search patterns.
+- Premium Mexican-pink and white visual system with calmer editorial product merchandising.
+- App-style mobile navigation with a raised bag action, safe-area handling and installable PWA continuity.
+- Cake concierge, celebration reminders, delivery tracking and corporate ordering surfaced as useful services.
+
 ## 1.6.0 — Cart continuity and recovery
 
 - Local-first PWA bags merged with authenticated PostgreSQL carts across devices.

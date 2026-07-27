@@ -13,6 +13,17 @@ test("storefront exposes delivery and accessible dialogs", () => {
   assert.match(source, /aria-modal="true"/);
 });
 
+test("version 2 storefront has a photographic swipe carousel and app navigation", () => {
+  const source = readFileSync(new URL("../components/storefront.tsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../app/styles.css", import.meta.url), "utf8");
+  assert.match(source, /aria-roledescription="carousel"/);
+  assert.match(source, /offerTrackRef/);
+  assert.match(source, /offer-butterscotch\.avif/);
+  assert.match(source, /Mobile app navigation/);
+  assert.match(styles, /scroll-snap-type:x mandatory/);
+  assert.match(styles, /\.mobile-tabbar \.tabbar-order/);
+});
+
 test("PWA has install, offline, update and maskable icon contracts", () => {
   const shell = readFileSync(new URL("../components/pwa-shell.tsx", import.meta.url), "utf8");
   const manifest = readFileSync(new URL("../app/manifest.ts", import.meta.url), "utf8");
