@@ -2,8 +2,11 @@ services:
   - type: web
     name: cakecity-api
     runtime: docker
+    region: singapore
+    plan: starter
     dockerfilePath: ./backend/api/Dockerfile
     dockerContext: .
+    dockerCommand: sh -c 'uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000} --proxy-headers'
     healthCheckPath: /health
     autoDeployTrigger: checksPass
     preDeployCommand: python migrate.py
@@ -43,6 +46,8 @@ services:
   - type: worker
     name: cakecity-worker
     runtime: docker
+    region: singapore
+    plan: starter
     dockerfilePath: ./backend/api/Dockerfile
     dockerContext: .
     dockerCommand: python -m app.worker
@@ -62,11 +67,13 @@ services:
       - fromGroup: cakecity-secrets
   - type: keyvalue
     name: cakecity-redis
+    region: singapore
     ipAllowList: []
     plan: starter
     maxmemoryPolicy: allkeys-lru
 databases:
   - name: cakecity-postgres
+    region: singapore
     plan: basic-256mb
     databaseName: cakecity
     user: cakecity
