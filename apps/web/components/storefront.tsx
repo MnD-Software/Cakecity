@@ -63,7 +63,7 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
 
       <header className="header">
         <button className="icon-button mobile-menu" onClick={() => setMobileNavOpen(open => !open)} aria-expanded={mobileNavOpen} aria-label={mobileNavOpen ? "Close menu" : "Open menu"}>{mobileNavOpen ? <X /> : <Menu />}</button>
-        <a className="brand" href="/" aria-label="Cake City home"><span>CAKE</span><span>CITY</span></a>
+        <a className="brand" href="/" aria-label="Cake City home"><img src="/icons/cake-city-icon.svg" alt="" /><span><b>CAKE</b><b>CITY</b></span></a>
         <nav className={mobileNavOpen ? "open" : ""} aria-label="Primary navigation">
           <a onClick={() => setMobileNavOpen(false)} href="#shop">Cakes</a><a onClick={() => setMobileNavOpen(false)} href="#moments">Occasions</a><a onClick={() => setMobileNavOpen(false)} href="#concierge">Custom & gifting</a><a onClick={() => setMobileNavOpen(false)} href="/account/rewards">Rewards</a>
         </nav>
@@ -116,6 +116,23 @@ export function Storefront({ initialProducts }: { initialProducts?: Product[] })
 
       <section className="promise-strip" aria-label="Service promises">
         <span><Check /> Baked fresh daily</span><span><Check /> Delivered in a 30-min window</span><span><Check /> Happiness guaranteed</span><span><Check /> Secure M-Pesa checkout</span>
+      </section>
+
+      <section className="collection-section" aria-labelledby="collection-title">
+        <div className="collection-intro">
+          <p className="eyebrow">Our collection</p>
+          <h2 id="collection-title">Start with what<br /><em>you’re craving.</em></h2>
+          <p>The familiar Cake City favourites, now easier to explore.</p>
+        </div>
+        <div className="collection-grid">
+          {products.filter(product => product.imageUrl).slice(0, 3).map((product, index) => (
+            <a className={`collection-card collection-${index + 1}`} href={`/cakes/${product.id}`} key={product.id}>
+              <img src={product.imageUrl} alt={product.name} loading={index === 0 ? "eager" : "lazy"} />
+              <span className="collection-shade" />
+              <span className="collection-label"><small>{product.category || "Cake City favourite"}</small><b>{product.name}</b><i>Explore <ArrowRight /></i></span>
+            </a>
+          ))}
+        </div>
       </section>
 
       <section className="section" id="shop">
