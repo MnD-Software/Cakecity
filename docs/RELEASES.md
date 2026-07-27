@@ -3,6 +3,11 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.5.3 — Android build diagnostics
+
+- Preserves Android failure status while publishing the final Gradle output as check annotations.
+- Escapes annotation control characters so diagnostics remain complete and safe to inspect.
+
 ## 1.5.2 — Isolated mobile release builders
 
 - Builds Flutter Web and Android APK outputs on independent clean GitHub runners.

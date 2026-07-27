@@ -136,7 +136,7 @@ jobs:
       - run: flutter build web --release --dart-define=API_URL=https://cakecity-api.onrender.com
       - uses: actions/upload-artifact@v7
         with:
-          name: cakecity-driver-web-v1.5.2
+          name: cakecity-driver-web-v1.5.3
           path: apps/driver/build/web
   driver-android:
     runs-on: ubuntu-latest
@@ -152,8 +152,21 @@ jobs:
       - run: flutter create --platforms=android --project-name cakecity_driver .
       - run: flutter pub get
       - name: Build isolated Android release
-        run: flutter build apk --release --no-pub --dart-define=API_URL=https://cakecity-api.onrender.com
+        run: |
+          set +e
+          flutter build apk --release --no-pub --dart-define=API_URL=https://cakecity-api.onrender.com 2>&1 | tee /tmp/cakecity-android-build.log
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$build_status" -ne 0 ]; then
+            while IFS= read -r line; do
+              safe_line=${line//'%'/'%25'}
+              safe_line=${safe_line//$'\r'/'%0D'}
+              safe_line=${safe_line//$'\n'/'%0A'}
+              echo "::error title=Android release build::$safe_line"
+            done < <(tail -n 80 /tmp/cakecity-android-build.log)
+            exit "$build_status"
+          fi
       - uses: actions/upload-artifact@v7
         with:
-          name: cakecity-driver-android-v1.5.2
+          name: cakecity-driver-android-v1.5.3
           path: apps/driver/build/app/outputs/flutter-apk/app-release.apk
