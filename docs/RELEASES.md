@@ -3,7 +3,12 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
-## 1.2.1 — Lighthouse-stable discovery delivery
+## 1.2.2 — Deferred discovery hydration
+
+- Uses React lazy boundaries so discovery modules execute only when their customer surface opens.
+- Omits the personalized rail from API-less production previews while retaining it in configured deployments.
+
+## 1.2.1 — Lighthouse diagnostics
 
 - Loads natural-language search and Cake Concierge only when customers open those experiences.
 - Avoids an unnecessary production-preview API request when no deployed API URL is configured.

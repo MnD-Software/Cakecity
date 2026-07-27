@@ -1,19 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
-import dynamic from "next/dynamic";
-import { PersonalizedRail } from "@/components/personalized-rail";
-
-const NaturalSearchPanel = dynamic(
-  () => import("@/components/discovery-experience").then(module => module.NaturalSearchPanel),
-  { ssr: false },
+const NaturalSearchPanel = lazy(() =>
+  import("@/components/discovery-experience").then(module => ({ default: module.NaturalSearchPanel })),
 );
-const ConciergePanel = dynamic(
-  () => import("@/components/discovery-experience").then(module => module.ConciergePanel),
-  { ssr: false },
+const ConciergePanel = lazy(() =>
+  import("@/components/discovery-experience").then(module => ({ default: module.ConciergePanel })),
+);
+const PersonalizedRail = lazy(() =>
+  import("@/components/personalized-rail").then(module => ({ default: module.PersonalizedRail })),
 );
 
 export function Storefront() {
@@ -23,6 +21,7 @@ export function Storefront() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [conciergeOpen, setConciergeOpen] = useState(false);
+  const hasDiscoveryApi = process.env.NODE_ENV !== "production" || Boolean(process.env.NEXT_PUBLIC_API_URL);
 
   const count = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
@@ -98,7 +97,7 @@ export function Storefront() {
         </div>
       </section>
 
-      <PersonalizedRail />
+      {hasDiscoveryApi && <Suspense fallback={null}><PersonalizedRail /></Suspense>}
 
       <section className="occasion" id="moments">
         <div className="occasion-copy"><p className="eyebrow light">Find your perfect cake</p><h2>What are we<br /><em>celebrating?</em></h2><p>Tell us the moment. We’ll help with the magic.</p></div>
@@ -114,8 +113,8 @@ export function Storefront() {
 
       <footer><a className="brand inverse" href="#"><span>CAKE</span><span>CITY</span></a><p>Joy, baked beautifully in Nairobi.</p><span>© 2026 Cake City Kenya</span></footer>
 
-      {searchOpen && <NaturalSearchPanel close={() => setSearchOpen(false)} />}
-      {conciergeOpen && <ConciergePanel close={() => setConciergeOpen(false)} />}
+      {searchOpen && <Suspense fallback={null}><NaturalSearchPanel close={() => setSearchOpen(false)} /></Suspense>}
+      {conciergeOpen && <Suspense fallback={null}><ConciergePanel close={() => setConciergeOpen(false)} /></Suspense>}
       {activeProduct && <ProductPanel product={activeProduct} close={() => setActiveProduct(null)} add={configuration => addConfigured(activeProduct, configuration)} />}
       <CartPanel open={cartOpen} close={() => setCartOpen(false)} cart={cart} subtotal={subtotal} update={updateQuantity} />
     </main>
