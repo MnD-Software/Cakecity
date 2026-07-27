@@ -26,6 +26,7 @@ for (const reportPath of reports) {
     const score = report.categories?.[category]?.score;
     const passed = typeof score === "number" && score >= minimum;
     console.log(`  ${category}: ${score ?? "missing"} (minimum ${minimum}) ${passed ? "PASS" : "FAIL"}`);
+    if (!passed) console.log(`::error title=Lighthouse ${category}::score=${score ?? "missing"} minimum=${minimum} report=${reportPath}`);
     failed ||= !passed;
   }
 
@@ -33,6 +34,7 @@ for (const reportPath of reports) {
     const value = report.audits?.[audit]?.numericValue;
     const passed = typeof value === "number" && value <= maximum;
     console.log(`  ${audit}: ${value ?? "missing"} (maximum ${maximum}) ${passed ? "PASS" : "FAIL"}`);
+    if (!passed) console.log(`::error title=Lighthouse ${audit}::value=${value ?? "missing"} maximum=${maximum} report=${reportPath}`);
     failed ||= !passed;
   }
 }

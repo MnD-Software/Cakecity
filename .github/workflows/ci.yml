@@ -135,7 +135,7 @@ jobs:
       - run: flutter build apk --release --dart-define=API_URL=https://cakecity-api.onrender.com
       - uses: actions/upload-artifact@v7
         with:
-          name: cakecity-driver-v1.2.0
+          name: cakecity-driver-v1.2.1
           path: |
             apps/driver/build/app/outputs/flutter-apk/app-release.apk
             apps/driver/build/web

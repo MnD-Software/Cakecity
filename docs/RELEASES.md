@@ -3,6 +3,12 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.2.1 — Lighthouse-stable discovery delivery
+
+- Loads natural-language search and Cake Concierge only when customers open those experiences.
+- Avoids an unnecessary production-preview API request when no deployed API URL is configured.
+- Emits exact Lighthouse category and metric failures as GitHub Actions annotations.
+
 ## 1.2.0 — Intelligent discovery and Cake Concierge
 
 - Natural-language intent extraction for occasion, flavour, style, recipient, age, budget and guests.

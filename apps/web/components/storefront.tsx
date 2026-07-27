@@ -4,7 +4,17 @@ import { useMemo, useState } from "react";
 import { ArrowRight, Check, ChevronRight, Heart, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, UserRound, X } from "lucide-react";
 import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
-import { ConciergePanel, NaturalSearchPanel, PersonalizedRail } from "@/components/discovery-experience";
+import dynamic from "next/dynamic";
+import { PersonalizedRail } from "@/components/personalized-rail";
+
+const NaturalSearchPanel = dynamic(
+  () => import("@/components/discovery-experience").then(module => module.NaturalSearchPanel),
+  { ssr: false },
+);
+const ConciergePanel = dynamic(
+  () => import("@/components/discovery-experience").then(module => module.ConciergePanel),
+  { ssr: false },
+);
 
 export function Storefront() {
   const { cart, add, updateQuantity } = usePersistentCart();
