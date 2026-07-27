@@ -70,6 +70,20 @@ export function Storefront() {
         </div>
       </header>
 
+      <section className="photo-carousel hero-carousel" aria-roledescription="carousel" aria-label="Featured Cake City cakes">
+        <div className="photo-carousel-track" ref={offerTrackRef} onScroll={event => setOfferIndex(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
+          {offers.map((offer, index) => <article className="photo-slide" key={offer.title} aria-hidden={index !== offerIndex}>
+            <img src={offer.image} alt={`${offer.title} cake`} />
+            <div className="photo-slide-shade" />
+            <div className="photo-slide-copy"><p>{offer.kicker}</p><h2>{offer.title}</h2><span>{offer.price}</span><a href="#shop">Shop the cake <ArrowRight /></a></div>
+          </article>)}
+        </div>
+        <div className="photo-carousel-ui">
+          <div className="photo-dots">{offers.map((offer, index) => <button key={offer.title} className={index === offerIndex ? "active" : ""} onClick={() => setOfferIndex(index)} aria-label={`Show ${offer.title}`} />)}</div>
+          <div><button onClick={() => setOfferIndex(current => (current - 1 + offers.length) % offers.length)} aria-label="Previous cake"><ArrowLeft /></button><button onClick={() => setOfferIndex(current => (current + 1) % offers.length)} aria-label="Next cake"><ArrowRight /></button></div>
+        </div>
+      </section>
+
       <section className="plan-wrap" aria-label="Find the right cake">
         <div className="plan-bar">
           <button onClick={() => setConciergeOpen(true)}><Gift /><span><small>Occasion</small><b>What are we celebrating?</b></span></button>
@@ -97,20 +111,6 @@ export function Storefront() {
 
       <section className="promise-strip" aria-label="Service promises">
         <span><Check /> Baked fresh daily</span><span><Check /> Delivered in a 30-min window</span><span><Check /> Happiness guaranteed</span><span><Check /> Secure M-Pesa checkout</span>
-      </section>
-
-      <section className="photo-carousel" aria-roledescription="carousel" aria-label="Featured Cake City cakes">
-        <div className="photo-carousel-track" ref={offerTrackRef} onScroll={event => setOfferIndex(Math.round(event.currentTarget.scrollLeft / event.currentTarget.clientWidth))}>
-          {offers.map((offer, index) => <article className="photo-slide" key={offer.title} aria-hidden={index !== offerIndex}>
-            <img src={offer.image} alt={`${offer.title} cake`} />
-            <div className="photo-slide-shade" />
-            <div className="photo-slide-copy"><p>{offer.kicker}</p><h2>{offer.title}</h2><span>{offer.price}</span><a href="#shop">Shop the cake <ArrowRight /></a></div>
-          </article>)}
-        </div>
-        <div className="photo-carousel-ui">
-          <div className="photo-dots">{offers.map((offer, index) => <button key={offer.title} className={index === offerIndex ? "active" : ""} onClick={() => setOfferIndex(index)} aria-label={`Show ${offer.title}`} />)}</div>
-          <div><button onClick={() => setOfferIndex(current => (current - 1 + offers.length) % offers.length)} aria-label="Previous cake"><ArrowLeft /></button><button onClick={() => setOfferIndex(current => (current + 1) % offers.length)} aria-label="Next cake"><ArrowRight /></button></div>
-        </div>
       </section>
 
       <section className="section" id="shop">

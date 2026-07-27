@@ -70,6 +70,9 @@ test("rewards and moments are operational PWA account experiences", () => {
   assert.match(rewards, /\/v1\/account\/rewards\/redeem/);
   assert.match(rewards, /\/v1\/account\/rewards\/referrals\/apply/);
   assert.match(moments, /\/v1\/account\/moments/);
+  assert.match(moments, /\/v1\/account\/moments\/timeline/);
+  assert.match(moments, /Reorder last cake/);
+  assert.match(moments, /Your cake timeline/);
   assert.match(checkout, /Cake City credit/);
   assert.match(checkout, /setPaymentMethod\("wallet"\)/);
 });

@@ -16,3 +16,11 @@ def test_saved_routes_require_identity_and_apply_collection_limits():
     assert ">= 100" in source
     assert ">= 30" in source
     assert 'Product.status == "publish"' in source
+
+
+def test_cake_memory_timeline_is_owner_scoped_and_reorderable():
+    source = (Path(__file__).parents[1] / "app" / "routes" / "moments.py").read_text()
+    assert '@router.get("/timeline")' in source
+    assert "Order.customer_id == customer.id" in source
+    assert "CelebrationMoment.customer_id == customer.id" in source
+    assert '"reorder_url": f"/account/orders/{order.reference}"' in source

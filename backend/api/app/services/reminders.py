@@ -31,11 +31,12 @@ async def process_due_reminders(db, today: date) -> int:
         if exists:
             continue
         when = "today" if days_before == 0 else f"in {days_before} day{'s' if days_before != 1 else ''}"
+        previous_order_url = f"/account/moments?moment={moment.id}"
         notification = await notify(
             db, moment.customer_id, "moment_reminder",
             f"{moment.name}'s {moment.occasion} is {when}",
-            "Plan something beautiful before the date slips by.",
-            {"url": f"/?occasion={moment.occasion}", "moment_id": str(moment.id)},
+            "Reorder a cake from your memory timeline or create a new design.",
+            {"url": previous_order_url, "moment_id": str(moment.id), "occasion": moment.occasion},
         )
         db.add(ReminderDelivery(
             moment_id=moment.id, event_year=event.year, days_before=days_before,

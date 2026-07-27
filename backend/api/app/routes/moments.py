@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth import current_customer
 from ..database import session
-from ..models import CelebrationMoment, Customer
+from ..models import CelebrationMoment, Customer, Order, OrderLine, Product
+from ..services.reminders import anniversary_in_year
 
 router = APIRouter(prefix="/v1/account/moments", tags=["moments"])
 
@@ -41,6 +42,59 @@ async def list_moments(customer: Customer = Depends(current_customer), db: Async
         CelebrationMoment.customer_id == customer.id, CelebrationMoment.is_active.is_(True),
     ).order_by(CelebrationMoment.event_date))).all()
     return [read(item) for item in items]
+
+
+@router.get("/timeline")
+async def cake_memory_timeline(customer: Customer = Depends(current_customer), db: AsyncSession = Depends(session)):
+    """Owner-scoped celebration history; WooCommerce-synchronized orders remain authoritative."""
+    moments = (await db.scalars(select(CelebrationMoment).where(
+        CelebrationMoment.customer_id == customer.id, CelebrationMoment.is_active.is_(True),
+    ))).all()
+    rows = (await db.execute(
+        select(Order, OrderLine, Product)
+        .join(OrderLine, OrderLine.order_id == Order.id)
+        .join(Product, Product.id == OrderLine.product_id)
+        .where(
+            Order.customer_id == customer.id,
+            Order.state.notin_(("awaiting_payment", "payment_failed", "cancelled")),
+        )
+        .order_by(Order.created_at.desc())
+        .limit(150)
+    )).all()
+    memories = []
+    for order, line, product in rows:
+        message = str(line.configuration.get("message") or "")
+        matched = next((moment for moment in moments if moment.name.casefold() in message.casefold()), None)
+        memories.append({
+            "order_reference": order.reference,
+            "ordered_at": order.created_at,
+            "year": order.created_at.year,
+            "title": f"{matched.name}'s {matched.occasion}" if matched else line.product_name,
+            "moment_id": str(matched.id) if matched else None,
+            "product_name": line.product_name,
+            "product_slug": product.slug,
+            "image_url": product.image_url,
+            "message": message or None,
+            "configuration": line.configuration,
+            "reorder_url": f"/account/orders/{order.reference}",
+        })
+    today = date.today()
+    upcoming = []
+    for moment in moments:
+        event = anniversary_in_year(moment.event_date, today.year)
+        if event < today:
+            event = anniversary_in_year(moment.event_date, today.year + 1)
+        previous = next((memory for memory in memories if memory["moment_id"] == str(moment.id)), None)
+        upcoming.append({
+            **read(moment), "next_event_date": event, "days_until": (event - today).days,
+            "last_cake": previous,
+            "prompt": (
+                f"{moment.name}'s {moment.occasion} is coming up in {(event - today).days} days. "
+                + (f"Reorder {previous['product_name']} or create a new design?" if previous else "Would you like to choose a cake?")
+            ),
+        })
+    upcoming.sort(key=lambda item: item["days_until"])
+    return {"memories": memories, "upcoming": upcoming}
 
 
 @router.post("", status_code=201)
