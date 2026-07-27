@@ -3,6 +3,11 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.5.1 — Resilient Android release packaging
+
+- Retries one failed Gradle packaging attempt after clearing only the Android build output.
+- Preserves the already-built Flutter Web artifact and surfaces an explicit CI warning on retry.
+
 ## 1.5.0 — Scheduled and recurring cake plans
 
 - One-time, weekly, monthly, quarterly and annual customer cake plans.

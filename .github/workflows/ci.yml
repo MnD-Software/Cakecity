@@ -134,10 +134,20 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release --dart-define=API_URL=https://cakecity-api.onrender.com
-      - run: flutter build apk --release --dart-define=API_URL=https://cakecity-api.onrender.com
+      - name: Build Android release with one clean retry
+        run: |
+          for attempt in 1 2; do
+            echo "Android release build attempt $attempt"
+            flutter build apk --release --no-pub --dart-define=API_URL=https://cakecity-api.onrender.com && exit 0
+            if [ "$attempt" = "1" ]; then
+              echo "::warning title=Android build retry::First Gradle packaging attempt failed; clearing only the Android build output and retrying once."
+              rm -rf build/app
+            fi
+          done
+          exit 1
       - uses: actions/upload-artifact@v7
         with:
-          name: cakecity-driver-v1.5.0
+          name: cakecity-driver-v1.5.1
           path: |
             apps/driver/build/app/outputs/flutter-apk/app-release.apk
             apps/driver/build/web
