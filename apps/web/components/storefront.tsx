@@ -2,7 +2,7 @@
 
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Bell, CalendarDays, Check, ChevronRight, Gift, Heart, Home, MapPin, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, Star, Store, UserRound, Users, X } from "lucide-react";
-import { formatKES, products, type CartItem, type Product } from "@/lib/catalog";
+import { formatKES, products as previewProducts, type CartItem, type Product } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
 import { useSavedCakes } from "@/lib/use-saved-cakes";
 const NaturalSearchPanel = lazy(() =>
@@ -15,7 +15,8 @@ const PersonalizedRail = lazy(() =>
   import("@/components/personalized-rail").then(module => ({ default: module.PersonalizedRail })),
 );
 
-export function Storefront() {
+export function Storefront({ initialProducts }: { initialProducts?: Product[] }) {
+  const products = initialProducts?.length ? initialProducts : previewProducts;
   const { cart, add, updateQuantity } = usePersistentCart();
   const { isSaved, toggle: toggleSaved } = useSavedCakes();
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
@@ -127,7 +128,7 @@ export function Storefront() {
               <button className={`heart ${isSaved(product.id) ? "selected" : ""}`} onClick={() => toggleSaved(product.id)} aria-pressed={isSaved(product.id)} aria-label={`Save ${product.name}`}><Heart fill="currentColor" /></button>
               {product.tag && <span className="product-tag">{product.tag}</span>}
               <button className={`cake-visual ${product.palette}`} onClick={() => setActiveProduct(product)} aria-label={`View ${product.name}`}>
-                <span className="cake"><i /><b /><i /></span>
+                {product.imageUrl ? <img className="product-photo" src={product.imageUrl} alt="" /> : <span className="cake"><i /><b /><i /></span>}
               </button>
               <div className="product-info">
                 <div><h3>{product.name}</h3><p>{product.note}</p></div><span className="rating"><Star size={13} fill="currentColor" /> {product.rating}</span>

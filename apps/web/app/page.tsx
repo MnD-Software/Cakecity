@@ -1,6 +1,8 @@
 import { Storefront } from "@/components/storefront";
+import { liveStorefrontProducts } from "@/lib/server-catalog";
 
-export default function Home() {
+export default async function Home() {
+  const liveProducts = await liveStorefrontProducts();
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -20,5 +22,5 @@ export default function Home() {
       },
     ],
   };
-  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} /><Storefront /></>;
+  return <><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} /><Storefront initialProducts={liveProducts} /></>;
 }

@@ -7,6 +7,15 @@ test("catalog keeps stable product IDs for synchronization", () => {
   for (const id of ["red-velvet", "salted-caramel", "chocolate", "berry"]) assert.match(source, new RegExp(`id: "${id}"`));
 });
 
+test("local storefront can render the public WooCommerce catalogue without exposing credentials", () => {
+  const loader = readFileSync(new URL("../lib/server-catalog.ts", import.meta.url), "utf8");
+  const page = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.match(loader, /import "server-only"/);
+  assert.match(loader, /wc\/store\/v1/);
+  assert.doesNotMatch(loader, /consumer_key|consumer_secret|ck_|cs_/);
+  assert.match(page, /liveStorefrontProducts/);
+});
+
 test("storefront exposes delivery and accessible dialogs", () => {
   const source = readFileSync(new URL("../components/storefront.tsx", import.meta.url), "utf8");
   assert.match(source, /Choose delivery time/);
