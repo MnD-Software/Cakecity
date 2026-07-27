@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft, ArrowRight, Check, ChevronDown, Clock3, Heart, MapPin, Maximize2,
+  ArrowLeft, ArrowRight, CalendarClock, Check, ChevronDown, Clock3, Heart, MapPin, Maximize2,
   Minus, PackageCheck, Play, Plus, Rotate3D, ShieldCheck, ShoppingBag, Sparkles,
   Star, Truck, X,
 } from "lucide-react";
@@ -177,6 +177,7 @@ export function ProductExperience({ product }: { product: ProductDetail }) {
           <div className="quantity-control"><button onClick={() => setQuantity(value => Math.max(1, value - 1))} aria-label="Decrease quantity"><Minus /></button><b>{quantity}</b><button onClick={() => setQuantity(value => Math.min(20, value + 1))} aria-label="Increase quantity"><Plus /></button></div>
           <button className="purchase-button" onClick={addConfigured} disabled={!product.in_stock}>{product.in_stock ? <>Add to bag <span>{formatKES(total)}</span><ArrowRight /></> : "Currently unavailable"}</button>
         </div>
+        <a className="product-plan-link" href={`/account/subscriptions?product=${encodeURIComponent(product.slug)}`}><CalendarClock /> Make this a weekly or monthly tradition <ArrowRight /></a>
         <div className="purchase-trust"><span><Clock3 /> Ready in about {Math.ceil(product.preparation_minutes / 60)} hours</span><span><ShieldCheck /> Secure M-Pesa & card checkout</span></div>
       </div>
     </section>

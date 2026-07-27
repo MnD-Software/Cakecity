@@ -136,3 +136,16 @@ test("saved addresses are manageable and accelerate checkout", () => {
   assert.match(checkout, /Deliver to a saved place/);
   assert.match(checkout, /selectedAddress\?\.recipient_name/);
 });
+
+test("consumer cake plans support scheduled and recurring secure checkout", () => {
+  const subscriptions = readFileSync(new URL("../app/account/subscriptions/page.tsx", import.meta.url), "utf8");
+  const product = readFileSync(new URL("../components/product-experience.tsx", import.meta.url), "utf8");
+  const account = readFileSync(new URL("../app/account/page.tsx", import.meta.url), "utf8");
+  assert.match(subscriptions, /\/v1\/account\/subscriptions/);
+  assert.match(subscriptions, /One scheduled order/);
+  assert.match(subscriptions, /Every week/);
+  assert.match(subscriptions, /Every month/);
+  assert.match(subscriptions, /Payment always uses secure checkout/);
+  assert.match(product, /Make this a weekly or monthly tradition/);
+  assert.match(account, /Scheduled and recurring orders/);
+});

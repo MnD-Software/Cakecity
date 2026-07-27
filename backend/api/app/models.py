@@ -170,6 +170,42 @@ class SavedMessage(Base):
     __table_args__ = (Index("ix_saved_messages_customer_created", "customer_id", "created_at"),)
 
 
+class ConsumerSubscription(Base):
+    __tablename__ = "consumer_subscriptions"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
+    product_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("products.id", ondelete="RESTRICT"), nullable=False)
+    address_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("addresses.id", ondelete="SET NULL"))
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    cadence: Mapped[str] = mapped_column(String(20), nullable=False)
+    configuration: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    fulfilment: Mapped[str] = mapped_column(String(20), nullable=False)
+    delivery_slot: Mapped[str] = mapped_column(String(120), nullable=False)
+    state: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    __table_args__ = (
+        Index("ix_consumer_subscriptions_due", "state", "next_run_at"),
+        Index("ix_consumer_subscriptions_customer", "customer_id", "created_at"),
+    )
+
+
+class ConsumerSubscriptionRun(Base):
+    __tablename__ = "consumer_subscription_runs"
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    subscription_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("consumer_subscriptions.id", ondelete="CASCADE"), nullable=False)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    state: Mapped[str] = mapped_column(String(20), default="ready", nullable=False)
+    order_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        UniqueConstraint("subscription_id", "scheduled_for", name="uq_consumer_subscription_run"),
+        Index("ix_consumer_subscription_runs_plan", "subscription_id", "scheduled_for"),
+    )
+
+
 class Cart(Base):
     __tablename__ = "carts"
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)

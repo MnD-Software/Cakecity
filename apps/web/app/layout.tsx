@@ -8,6 +8,7 @@ import "./product.css";
 import "./discovery.css";
 import "./saved.css";
 import "./addresses.css";
+import "./subscriptions.css";
 import { PwaShell } from "@/components/pwa-shell";
 
 export const metadata: Metadata = {

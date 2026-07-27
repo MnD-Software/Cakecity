@@ -3,6 +3,14 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.5.0 — Scheduled and recurring cake plans
+
+- One-time, weekly, monthly, quarterly and annual customer cake plans.
+- Persisted product configuration, fulfilment, saved destination and preferred delivery window.
+- Idempotent horizontally safe renewal runs with transactional notification dispatch.
+- Pause, resume and cancel controls plus renewal-to-secure-checkout restoration.
+- Explicit no-raw-card-storage boundary with current stock and price revalidation.
+
 ## 1.4.0 — Address book and faster checkout
 
 - Premium responsive address management with create, edit, remove and default-place workflows.

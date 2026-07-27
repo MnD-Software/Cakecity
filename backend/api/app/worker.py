@@ -14,6 +14,7 @@ from .services.reminders import process_due_reminders
 from .services.campaigns import claim_due_campaign, complete_campaign_delivery, launch_campaign
 from .services.fulfilment import ensure_production_ticket, process_stage_command, synchronize_operational_state
 from .routes.corporate import process_due_corporate_recurring
+from .routes.subscriptions import process_due_subscriptions
 from zoneinfo import ZoneInfo
 from .services.woocommerce import WooCommerceClient
 from .settings import settings
@@ -229,6 +230,7 @@ async def process(event: OutboxEvent) -> None:
 async def run() -> None:
     last_reminder_date = None
     last_corporate_check = None
+    last_subscription_check = None
     while True:
         now = datetime.now(timezone.utc)
         today = now.astimezone(ZoneInfo("Africa/Nairobi")).date()
@@ -242,6 +244,11 @@ async def run() -> None:
                 await process_due_corporate_recurring(db, now)
                 await db.commit()
             last_corporate_check = now
+        if last_subscription_check is None or (now - last_subscription_check).total_seconds() >= 60:
+            async with SessionFactory() as db:
+                await process_due_subscriptions(db, now)
+                await db.commit()
+            last_subscription_check = now
         async with SessionFactory() as db:
             event = await claim_event(db)
             webhook = None if event else await claim_webhook(db)
