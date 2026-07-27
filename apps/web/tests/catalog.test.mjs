@@ -124,3 +124,15 @@ test("saved celebrations persist locally and synchronize to the protected accoun
   assert.match(saved, /Saved inscriptions/);
   assert.match(product, /toggleSaved\(product\.slug\)/);
 });
+
+test("saved addresses are manageable and accelerate checkout", () => {
+  const account = readFileSync(new URL("../app/account/page.tsx", import.meta.url), "utf8");
+  const addresses = readFileSync(new URL("../app/account/addresses/page.tsx", import.meta.url), "utf8");
+  const checkout = readFileSync(new URL("../app/checkout/page.tsx", import.meta.url), "utf8");
+  assert.match(account, /\/account\/addresses/);
+  assert.match(addresses, /\/v1\/account\/addresses/);
+  assert.match(addresses, /\/default/);
+  assert.match(addresses, /method: editing \? "PUT" : "POST"/);
+  assert.match(checkout, /Deliver to a saved place/);
+  assert.match(checkout, /selectedAddress\?\.recipient_name/);
+});

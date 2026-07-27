@@ -132,6 +132,9 @@ Release v1.3 adds local-first favourites that merge securely after sign-in, an a
 library, and reusable saved inscription messages. The ownership and synchronization contract is
 documented in `docs/SAVED_CELEBRATIONS.md`.
 
+Release v1.4 adds a complete delivery address book and default-address prefill in checkout without
+removing guest checkout. The workflow and ownership rules are documented in `docs/ADDRESS_BOOK.md`.
+
 ## Configure delivery proof
 
 Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on the API and

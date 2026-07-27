@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, CheckCircle2, Clock3, CreditCard, LoaderCircle, MapPin, PackageCheck, ShieldCheck, Smartphone, Store, WalletCards } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, type Customer } from "@/lib/api";
 import { formatKES } from "@/lib/catalog";
 import { usePersistentCart } from "@/lib/use-persistent-cart";
 
@@ -14,6 +14,10 @@ type PaymentIntent = {
   action: { type: string; redirect_url?: string; message?: string };
 };
 type PaymentStatus = { state: string; order_reference: string; failure_message?: string };
+type SavedAddress = {
+  id: string; label: string; recipient_name: string; phone: string; line1: string;
+  line2: string | null; area: string; city: string; delivery_notes: string | null; is_default: boolean;
+};
 
 export default function CheckoutPage() {
   const { cart, hydrated } = usePersistentCart();
@@ -26,11 +30,20 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState<PaymentIntent | null>(null);
   const [paymentState, setPaymentState] = useState("");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
   const estimated = useMemo(() => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [cart]);
+  const selectedAddress = addresses.find(address => address.id === selectedAddressId);
 
   useEffect(() => {
     api<{ wallet: { balance: string } }>("/v1/account/rewards")
       .then(result => setWalletBalance(Number(result.wallet.balance))).catch(() => undefined);
+    api<Customer>("/v1/auth/me").then(setCustomer).catch(() => undefined);
+    api<SavedAddress[]>("/v1/account/addresses").then(result => {
+      setAddresses(result);
+      setSelectedAddressId(result.find(address => address.is_default)?.id ?? result[0]?.id ?? "");
+    }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -121,9 +134,10 @@ export default function CheckoutPage() {
       <form className="checkout-layout" onSubmit={review}>
         <section className="checkout-main">
           <div className="checkout-intro"><p className="eyebrow">Your moment, your way</p><h1>How should it<br /><em>reach you?</em></h1></div>
-          <section className="checkout-block contact-block"><div className="block-title"><span>01</span><div><h2>Your details</h2><p>For the receipt and delivery updates.</p></div></div><div className="field-row"><label>Full name<input name="recipient_name" required autoComplete="name" /></label><label>Email address<input name="email" required type="email" autoComplete="email" /></label></div><label>Phone number<input name="phone" required type="tel" autoComplete="tel" placeholder="0712 345 678" /></label></section>
+          {addresses.length > 0 && <section className="saved-address-picker"><div><MapPin /><span><b>Deliver to a saved place</b><small>Choose once and we’ll fill the details below.</small></span></div><div>{addresses.map(address => <button type="button" key={address.id} className={selectedAddressId === address.id ? "active" : ""} onClick={() => { setSelectedAddressId(address.id); setQuote(null); }}><span>{address.label}</span><small>{address.area}</small>{selectedAddressId === address.id && <Check />}</button>)}</div><a href="/account/addresses">Manage addresses</a></section>}
+          <section key={`contact-${selectedAddressId}`} className="checkout-block contact-block"><div className="block-title"><span>01</span><div><h2>Your details</h2><p>For the receipt and delivery updates.</p></div></div><div className="field-row"><label>Full name<input name="recipient_name" required autoComplete="name" defaultValue={selectedAddress?.recipient_name ?? (customer ? `${customer.first_name} ${customer.last_name}`.trim() : "")} /></label><label>Email address<input name="email" required type="email" autoComplete="email" defaultValue={customer?.email ?? ""} /></label></div><label>Phone number<input name="phone" required type="tel" autoComplete="tel" placeholder="0712 345 678" defaultValue={selectedAddress?.phone ?? customer?.phone ?? ""} /></label></section>
           <fieldset className="fulfilment"><legend>Fulfilment</legend><button type="button" className={fulfilment === "delivery" ? "active" : ""} onClick={() => setFulfilment("delivery")}><MapPin /><span><b>Delivery</b><small>To your door in a 30-minute window</small></span>{fulfilment === "delivery" && <Check />}</button><button type="button" className={fulfilment === "pickup" ? "active" : ""} onClick={() => setFulfilment("pickup")}><Store /><span><b>Pick up</b><small>Collect from your preferred Cake City</small></span>{fulfilment === "pickup" && <Check />}</button></fieldset>
-          {fulfilment === "delivery" && <section className="checkout-block"><div className="block-title"><span>02</span><div><h2>Delivery details</h2><p>Where the celebration is happening.</p></div></div><label>Street / building<input name="line1" required autoComplete="street-address" /></label><div className="field-row"><label>Area<select name="area" required defaultValue=""><option value="" disabled>Select area</option><option>Kilimani</option><option>Westlands</option><option>Karen</option><option>Runda</option><option>South B</option><option>CBD</option></select></label><label>Delivery notes<input name="notes" placeholder="Gate, floor or landmark" /></label></div></section>}
+          {fulfilment === "delivery" && <section key={`delivery-${selectedAddressId}`} className="checkout-block"><div className="block-title"><span>02</span><div><h2>Delivery details</h2><p>Where the celebration is happening.</p></div></div><label>Street / building<input name="line1" required autoComplete="street-address" defaultValue={selectedAddress ? `${selectedAddress.line1}${selectedAddress.line2 ? `, ${selectedAddress.line2}` : ""}` : ""} /></label><div className="field-row"><label>Area<select name="area" required defaultValue={selectedAddress?.area ?? ""}><option value="" disabled>Select area</option>{selectedAddress && !["Kilimani","Westlands","Karen","Runda","South B","CBD"].includes(selectedAddress.area) && <option>{selectedAddress.area}</option>}<option>Kilimani</option><option>Westlands</option><option>Karen</option><option>Runda</option><option>South B</option><option>CBD</option></select></label><label>Delivery notes<input name="notes" placeholder="Gate, floor or landmark" defaultValue={selectedAddress?.delivery_notes ?? ""} /></label></div></section>}
           <section className="checkout-block"><div className="block-title"><span>03</span><div><h2>Choose the moment</h2><p>Freshness timed around your plans.</p></div></div><div className="date-choice"><CalendarDays /><span><b>Today, 26 July</b><small>Earliest available day</small></span><Check /></div><div className="slot-grid">{["Today · 3:30–4:00 PM","Today · 4:30–5:00 PM","Today · 5:30–6:00 PM","Tomorrow · 9:00–9:30 AM"].map(value => <button type="button" key={value} className={slot === value ? "active" : ""} onClick={() => setSlot(value)}><Clock3 />{value.replace("Today · ","").replace("Tomorrow · ","")}</button>)}</div></section>
         </section>
         <aside className="order-summary">

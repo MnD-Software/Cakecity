@@ -3,6 +3,13 @@
 Cake City uses small, verified releases on `main`. Every release must pass web tests,
 strict TypeScript, a production Next.js build, API tests, and deployment configuration validation.
 
+## 1.4.0 — Address book and faster checkout
+
+- Premium responsive address management with create, edit, remove and default-place workflows.
+- Owner-scoped and bounded address APIs with transactional default reassignment.
+- Signed-in checkout prefill for recipient, phone, street, area and delivery instructions.
+- Guest checkout preserved, with order-time address snapshots retained for payment integrity.
+
 ## 1.3.0 — Saved celebrations
 
 - Local-first favourite hearts across the storefront and premium product journey.
